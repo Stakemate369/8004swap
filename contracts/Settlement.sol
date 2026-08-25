@@ -107,9 +107,7 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
 
     function setPriceOracle(address tokenA, address tokenB, address oracle) external onlyOwner {
         oracleConfig[tokenA][tokenB] = OracleConfig({
-            oracle: oracle,
-            decimalsA: IERC20Metadata(tokenA).decimals(),
-            decimalsB: IERC20Metadata(tokenB).decimals()
+            oracle: oracle, decimalsA: IERC20Metadata(tokenA).decimals(), decimalsB: IERC20Metadata(tokenB).decimals()
         });
     }
 

@@ -64,7 +64,9 @@ contract Deploy is Script {
             settlement.setFeeRecipient(feeRecipient);
             settlement.setFeeBps(30); // 0,3%, padrão Uniswap
         } else {
-            console2.log("AVISO: FEE_RECIPIENT nao configurado - taxa fica em 0%, sem protecao contra wash trading sybil");
+            console2.log(
+                "AVISO: FEE_RECIPIENT nao configurado - taxa fica em 0%, sem protecao contra wash trading sybil"
+            );
         }
 
         // interruptor mestre — só liga depois de tudo configurado acima

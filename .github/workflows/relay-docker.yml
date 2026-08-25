@@ -30,6 +30,8 @@ jobs:
         with:
           context: ./relay
           push: true
+          # ghcr.io exige nome do repositório em minúsculo, mas github.repository_owner
+          # preserva a caixa exata do usuário (Stakemate369) — por isso fixo em minúsculo aqui
           tags: |
-            ghcr.io/${{ github.repository_owner }}/8004swap-relay:latest
-            ghcr.io/${{ github.repository_owner }}/8004swap-relay:${{ github.sha }}
+            ghcr.io/stakemate369/8004swap-relay:latest
+            ghcr.io/stakemate369/8004swap-relay:${{ github.sha }}

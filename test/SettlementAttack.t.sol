@@ -80,11 +80,14 @@ contract SettlementAttackTest is Test {
         settlement.setTradingEnabled(true);
     }
 
-    function _quote(address mk, address makerToken, address takerToken, uint256 makerAmount, uint256 takerAmount, uint256 nonce)
-        internal
-        view
-        returns (Settlement.Quote memory)
-    {
+    function _quote(
+        address mk,
+        address makerToken,
+        address takerToken,
+        uint256 makerAmount,
+        uint256 takerAmount,
+        uint256 nonce
+    ) internal view returns (Settlement.Quote memory) {
         return Settlement.Quote({
             maker: mk,
             taker: address(0),
@@ -117,8 +120,7 @@ contract SettlementAttackTest is Test {
 
         // --- atacante esgota o teto ANTES da vítima, wash-trading consigo mesmo ---
         for (uint256 i = 0; i < 2; i++) {
-            Settlement.Quote memory washQuote =
-                _quote(attackerMaker, address(weth), address(usdc), 1e18, 2000e6, i + 1);
+            Settlement.Quote memory washQuote = _quote(attackerMaker, address(weth), address(usdc), 1e18, 2000e6, i + 1);
             bytes memory washSig = _sign(attackerMakerKey, washQuote);
             vm.prank(attackerTaker);
             settlement.fillQuote(washQuote, washSig); // preço exato do oráculo, passa fácil
@@ -156,8 +158,7 @@ contract SettlementAttackTest is Test {
         uint256 attackerUsdcBefore = usdc.balanceOf(attackerMaker) + usdc.balanceOf(attackerTaker);
 
         for (uint256 i = 0; i < 2; i++) {
-            Settlement.Quote memory washQuote =
-                _quote(attackerMaker, address(weth), address(usdc), 1e18, 2000e6, i + 1);
+            Settlement.Quote memory washQuote = _quote(attackerMaker, address(weth), address(usdc), 1e18, 2000e6, i + 1);
             bytes memory washSig = _sign(attackerMakerKey, washQuote);
             vm.prank(attackerTaker);
             settlement.fillQuote(washQuote, washSig);
