@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
+import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { verifyMessage, type Address } from "viem";
 import { config } from "./config.js";
@@ -154,7 +155,16 @@ async function handleQuoteResponse(conn: ConnState, msg: QuoteResponseMsg) {
 }
 
 export function startServer(): WebSocketServer {
-  const wss = new WebSocketServer({ port: config.port });
+  // servidor HTTP explícito, não só o WS — proxies de ingress (Akash, load balancers em
+  // geral) costumam fazer uma checagem HTTP simples antes de liberar tráfego; um
+  // WebSocketServer criado só com {port} não responde requisição HTTP normal nenhuma,
+  // o que trava a checagem e derruba a conexão com 502
+  const httpServer = createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("8004Swap Relay ok");
+  });
+
+  const wss = new WebSocketServer({ server: httpServer });
 
   wss.on("connection", (socket) => {
     const conn: ConnState = {
@@ -198,7 +208,9 @@ export function startServer(): WebSocketServer {
     });
   });
 
-  console.log(`Relay ouvindo na porta ${config.port}`);
+  httpServer.listen(config.port, () => {
+    console.log(`Relay ouvindo na porta ${config.port}`);
+  });
   return wss;
 }
 
