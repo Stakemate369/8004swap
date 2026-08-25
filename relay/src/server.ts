@@ -13,6 +13,7 @@ import type {
   QuoteResponseMsg,
   RfqRequestMsg,
   SubscribePairMsg,
+  WireQuote,
 } from "./types.js";
 
 interface ConnState {
@@ -36,7 +37,7 @@ function loginMessage(nonce: string): string {
   return `Login to 8004Swap Relay: ${nonce}`;
 }
 
-function toRankedQuote(q: QuoteResponseMsg["quote"]): RankedQuote {
+function toRankedQuote(q: QuoteResponseMsg["quote"], signature: QuoteResponseMsg["signature"]): RankedQuote {
   return {
     maker: q.maker,
     taker: q.taker,
@@ -46,10 +47,11 @@ function toRankedQuote(q: QuoteResponseMsg["quote"]): RankedQuote {
     takerAmount: BigInt(q.takerAmount),
     expiry: BigInt(q.expiry),
     nonce: BigInt(q.nonce),
+    signature,
   };
 }
 
-function toWireQuote(q: RankedQuote): QuoteResponseMsg["quote"] {
+function toWireQuote(q: RankedQuote): WireQuote {
   return {
     maker: q.maker,
     taker: q.taker,
@@ -59,6 +61,7 @@ function toWireQuote(q: RankedQuote): QuoteResponseMsg["quote"] {
     takerAmount: q.takerAmount.toString(),
     expiry: q.expiry.toString(),
     nonce: q.nonce.toString(),
+    signature: q.signature,
   };
 }
 
@@ -133,7 +136,7 @@ async function handleQuoteResponse(conn: ConnState, msg: QuoteResponseMsg) {
     return send(conn, { type: "error", requestId: msg.requestId, message: "maker da cotação difere do endereço autenticado" });
   }
 
-  const quote = toRankedQuote(msg.quote);
+  const quote = toRankedQuote(msg.quote, msg.signature);
 
   const [makerActive, takerActive] = await Promise.all([
     isAgentActive(quote.maker),

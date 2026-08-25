@@ -55,26 +55,35 @@ export interface RfqBroadcastMsg {
   expiresAt: number; // epoch ms
 }
 
+export interface WireQuoteTerms {
+  maker: Address;
+  taker: Address;
+  makerToken: Address;
+  takerToken: Address;
+  makerAmount: string;
+  takerAmount: string;
+  expiry: string;
+  nonce: string;
+}
+
 export interface QuoteResponseMsg {
   type: "quote_response";
   requestId: string;
-  quote: {
-    maker: Address;
-    taker: Address;
-    makerToken: Address;
-    takerToken: Address;
-    makerAmount: string;
-    takerAmount: string;
-    expiry: string;
-    nonce: string;
-  };
+  quote: WireQuoteTerms;
+  signature: Hex;
+}
+
+// cotação pronta pra liquidar on-chain: mesmos campos do quote_response, mais a
+// assinatura do maker — sem isso o taker recebe os termos mas não consegue chamar
+// settlement.fillQuote() de verdade (a assinatura é obrigatória no contrato)
+export interface WireQuote extends WireQuoteTerms {
   signature: Hex;
 }
 
 export interface BestQuotesMsg {
   type: "best_quotes";
   requestId: string;
-  quotes: QuoteResponseMsg["quote"][];
+  quotes: WireQuote[];
 }
 
 export interface ErrorMsg {

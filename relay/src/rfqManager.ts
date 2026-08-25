@@ -1,4 +1,4 @@
-import type { Address } from "viem";
+import type { Address, Hex } from "viem";
 import { pairKey } from "./types.js";
 
 export interface RankedQuote {
@@ -10,6 +10,9 @@ export interface RankedQuote {
   takerAmount: bigint;
   expiry: bigint;
   nonce: bigint;
+  // assinatura EIP-712 do maker sobre esses termos — precisa sobreviver até o
+  // best_quotes final, é o que o taker usa pra chamar settlement.fillQuote() on-chain
+  signature: Hex;
 }
 
 // maior makerAmount primeiro (quem dá mais, pro mesmo takerAmount, ganha); descarta

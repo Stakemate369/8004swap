@@ -17,6 +17,7 @@ function quote(overrides: Partial<RankedQuote> = {}): RankedQuote {
     takerAmount: 50n,
     expiry: 9_999_999_999n,
     nonce: 1n,
+    signature: "0x" as const,
     ...overrides,
   };
 }
