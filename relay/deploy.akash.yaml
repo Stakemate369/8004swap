@@ -1,0 +1,41 @@
+---
+version: "2.0"
+
+services:
+  relay:
+    image: ghcr.io/stakemate369/8004swap-relay:latest
+    env:
+      - PORT=8787
+      - BASE_RPC_URL=https://sepolia.base.org
+      - REGISTRY_ADDRESS=0x7Bb793b6Ada038cf9c26c6BB54cA15Db6BD35ed1
+      - RFQ_WINDOW_MS=3000
+      - RFQ_RATE_LIMIT_PER_MINUTE=30
+      - REGISTRY_CACHE_TTL_MS=30000
+    expose:
+      - port: 8787
+        as: 80
+        to:
+          - global: true
+
+profiles:
+  compute:
+    relay:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 512Mi
+        storage:
+          size: 1Gi
+  placement:
+    akash:
+      pricing:
+        relay:
+          denom: uakt
+          amount: 1000
+
+deployment:
+  relay:
+    akash:
+      profile: relay
+      count: 1
