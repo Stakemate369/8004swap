@@ -13,6 +13,11 @@ services:
       - RFQ_WINDOW_MS=3000
       - RFQ_RATE_LIMIT_PER_MINUTE=30
       - REGISTRY_CACHE_TTL_MS=30000
+      - MAX_CONNECTIONS_PER_IP=20
+      # 1 hop = só o ingress do Akash na frente do relay. Se a topologia mudar (CDN,
+      # 2º proxy), esse valor tem que mudar junto — ver comentário em
+      # relay/src/remoteIp.ts pro porquê.
+      - TRUSTED_PROXY_HOPS=1
     expose:
       - port: 8787
         as: 80

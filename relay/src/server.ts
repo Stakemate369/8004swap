@@ -7,6 +7,7 @@ import { isAgentActive } from "./registryClient.js";
 import { verifyQuoteSignature } from "./eip712.js";
 import { RfqManager, type RankedQuote } from "./rfqManager.js";
 import { FixedWindowRateLimiter } from "./rateLimit.js";
+import { remoteIp } from "./remoteIp.js";
 import type {
   InboundMsg,
   OutboundMsg,
@@ -21,11 +22,13 @@ interface ConnState {
   socket: WebSocket;
   address: Address | null;
   challengeNonce: string;
+  ip: string;
 }
 
 const manager = new RfqManager();
 const rfqRateLimiter = new FixedWindowRateLimiter(config.rfqRateLimitPerMinute, 60_000);
 const connections = new Map<string, ConnState>();
+const connectionsPerIp = new Map<string, number>();
 
 function send(conn: ConnState, msg: OutboundMsg): void {
   if (conn.socket.readyState === conn.socket.OPEN) {
@@ -167,14 +170,42 @@ export function startServer(): WebSocketServer {
     res.end("8004Swap Relay ok");
   });
 
-  const wss = new WebSocketServer({ server: httpServer });
+  const wss = new WebSocketServer({
+    server: httpServer,
+    // verifyClient roda ANTES do upgrade HTTP->WS completar — rejeitar aqui evita
+    // pagar o custo de alocar o socket/parser do WS pra cada conexão de um IP que
+    // já estourou o teto. Checar isso só dentro de wss.on("connection", ...) (como
+    // era antes) deixa o atacante forçar o handshake completo primeiro; o cap só
+    // limitava quantas conexões ficavam rastreadas, não o custo de aceitar a
+    // enchente. O slot é reservado aqui (increment) e liberado no "close" do socket.
+    verifyClient: (info, callback) => {
+      const ip = remoteIp(
+        info.req.headers["x-forwarded-for"],
+        info.req.socket.remoteAddress,
+        config.trustedProxyHops
+      );
+      const current = connectionsPerIp.get(ip) ?? 0;
+      if (current >= config.maxConnectionsPerIp) {
+        callback(false, 429, "limite de conexões simultâneas por IP excedido");
+        return;
+      }
+      connectionsPerIp.set(ip, current + 1);
+      callback(true);
+    },
+  });
 
-  wss.on("connection", (socket) => {
+  wss.on("connection", (socket, request) => {
+    // verifyClient já reservou o slot em connectionsPerIp pra este IP; só
+    // recalcula o mesmo valor (determinístico a partir dos headers) pra guardar
+    // no ConnState e poder liberar o slot certo no "close"
+    const ip = remoteIp(request.headers["x-forwarded-for"], request.socket.remoteAddress, config.trustedProxyHops);
+
     const conn: ConnState = {
       id: randomUUID(),
       socket,
       address: null,
       challengeNonce: randomBytes(16).toString("hex"),
+      ip,
     };
     connections.set(conn.id, conn);
     send(conn, { type: "auth_challenge", nonce: conn.challengeNonce });
@@ -208,6 +239,9 @@ export function startServer(): WebSocketServer {
     socket.on("close", () => {
       manager.unsubscribeAll(conn.id);
       connections.delete(conn.id);
+      const remaining = (connectionsPerIp.get(conn.ip) ?? 1) - 1;
+      if (remaining <= 0) connectionsPerIp.delete(conn.ip);
+      else connectionsPerIp.set(conn.ip, remaining);
     });
   });
 

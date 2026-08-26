@@ -1,0 +1,32 @@
+{
+  "name": "@8004swap/agent-sdk",
+  "version": "0.1.0",
+  "description": "Cliente TypeScript para agentes se conectarem ao Relay do 8004Swap (handshake WS, RFQ, assinatura EIP-712 e liquidação on-chain).",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "viem": "^2.21.0"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "@types/ws": "^8.5.12",
+    "typescript": "^5.6.2",
+    "viem": "^2.21.0",
+    "vitest": "^2.1.1"
+  }
+}

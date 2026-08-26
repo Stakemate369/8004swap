@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -45,6 +46,18 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
     bytes32 private constant QUOTE_TYPEHASH = keccak256(
         "Quote(address maker,address taker,address makerToken,address takerToken,uint256 makerAmount,uint256 takerAmount,uint256 expiry,uint256 nonce)"
     );
+
+    // assinatura EIP-2612 opcional pra evitar a tx de approve separada antes do fill;
+    // deadline == 0 é o sinal de "sem permit" (taker já tem allowance pelo jeito
+    // convencional) — só o taker usa isso hoje porque é quem faz o fill esporádico;
+    // o maker, por operar continuamente, já mantém allowance permanente ao Settlement
+    struct PermitData {
+        uint256 value;
+        uint256 deadline;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    }
 
     IRegistry public immutable registry;
 
@@ -173,6 +186,30 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
     }
 
     function fillQuote(Quote calldata q, bytes calldata makerSignature) external nonReentrant {
+        _fillQuote(q, makerSignature, _noPermit());
+    }
+
+    // idêntico ao fillQuote, mas aplica um permit EIP-2612 do taker sobre takerToken
+    // antes do fill — poupa a tx de approve separada. `permit.deadline == 0` pula o
+    // permit (equivalente a chamar fillQuote direto); permit já usado ou token sem
+    // suporte a EIP-2612 não derruba o fill, só é ignorado (try/catch), porque o
+    // transferFrom seguinte já falha sozinho se a allowance real não for suficiente.
+    // O permit só é aplicado depois de TODAS as validações em _fillQuote passarem
+    // (checks-effects-interactions) — chamar permit() num q.takerToken arbitrário
+    // antes de saber se a quote é sequer válida chamaria um contrato escolhido pelo
+    // atacante sem necessidade.
+    function fillQuoteWithPermit(Quote calldata q, bytes calldata makerSignature, PermitData calldata permit)
+        external
+        nonReentrant
+    {
+        _fillQuote(q, makerSignature, permit);
+    }
+
+    function _noPermit() internal pure returns (PermitData memory) {
+        return PermitData({value: 0, deadline: 0, v: 0, r: bytes32(0), s: bytes32(0)});
+    }
+
+    function _fillQuote(Quote calldata q, bytes calldata makerSignature, PermitData memory permit) internal {
         require(tradingEnabled, "Settlement: trading not enabled");
         require(msg.sender != q.maker, "Settlement: self fill");
         require(q.makerAmount > 0 && q.takerAmount > 0, "Settlement: zero amount");
@@ -192,6 +229,12 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
         _checkAndTrackVolume(q.takerToken, q.takerAmount);
 
         usedNonces[q.maker][q.nonce] = true;
+
+        if (permit.deadline != 0) {
+            try IERC20Permit(q.takerToken).permit(
+                msg.sender, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s
+            ) {} catch {}
+        }
 
         IERC20(q.makerToken).safeTransferFrom(q.maker, msg.sender, q.makerAmount);
         // taxa cobrada uma vez só, no lado que o taker paga (o "input" da troca do
