@@ -30,6 +30,31 @@ issue diz o contrário.
 5. **Registro em diretórios do ecossistema ERC-8004/MCP.** Ajuda a redigir/propor
    listagem em índices públicos de agentes é bem-vinda.
 
+## O que você ganha contribuindo
+
+Sem orçamento, então o retorno não é dinheiro — é um destes três, dependendo do
+tamanho da contribuição:
+
+1. **Crédito público.** Nome no histórico do GitHub, citado no README/CONTRIBUTING,
+   e em qualquer `SECURITY.md`/changelog futuro que reconheça achados sérios. Vale
+   como prova pública de portfólio num tema (agentes autônomos + cripto) que está
+   crescendo agora.
+
+2. **Reputação on-chain, verificável pra sempre.** Como o diferencial do próprio
+   8004Swap é reputação via ERC-8004, contribuidores sérios podem ser registrados
+   como colaboradores fundadores de um jeito que fica gravado on-chain — não é um
+   "obrigado" que se perde, é uma prova pública e permanente, e é literalmente a
+   mesma tecnologia que o projeto usa pra tudo mais.
+
+3. **Assento de confiança.** Contribuição consistente e séria pode virar acesso de
+   merge no repositório ou posição de cossignatário no multisig dos contratos
+   (quando existir) — poder de decisão real, não só reconhecimento.
+
+**O que não oferecemos ainda:** parte de taxas do protocolo ou qualquer token —
+`feeBps` existe no contrato mas está zerado hoje, e não há token. Prometer uma fatia
+de algo que não existe é o tipo de promessa sem lastro que a gente evita aqui; se um
+dia houver receita ou token de verdade, isso se formaliza então, não antes.
+
 ## Como propor
 
 - Abra uma issue descrevendo o problema/proposta antes de um PR grande — evita
