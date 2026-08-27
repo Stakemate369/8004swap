@@ -17,7 +17,7 @@ issue diz o contrário.
    enquanto. Uma leitura adversarial de `contracts/Registry.sol` e
    `contracts/Settlement.sol` (41 testes Foundry já cobrem o comportamento esperado —
    veja `test/`) é bem-vinda via issue ou PR. Achados sérios entram no
-   `SECURITY.md` (a criar) com crédito público.
+   [`SECURITY.md`](./SECURITY.md) com crédito público.
 
 3. **SDK em outras linguagens.** Já existe um SDK em TypeScript (`sdk/`,
    `@8004swap/agent-sdk`) seguindo `PROTOCOL.md`. Um equivalente em Python/Rust/Go
