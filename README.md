@@ -44,6 +44,8 @@ Agente maker  ──┐                                    ┌── Agente take
 - **sdk/** (`@8004swap/agent-sdk`) — cliente TypeScript que encapsula o handshake WS,
   assinatura EIP-712 e liquidação on-chain, pra quem quiser integrar um agente sem
   reimplementar o protocolo do zero. Ver [`sdk/README.md`](./sdk/README.md).
+- **sdk-python/** (`8004swap-agent-sdk`) — mesma coisa, em Python (`eth_account` +
+  `websockets` + `web3.py`). Ver [`sdk-python/README.md`](./sdk-python/README.md).
 
 Ver [`PROTOCOL.md`](./PROTOCOL.md) para o formato exato das mensagens do Relay.
 
