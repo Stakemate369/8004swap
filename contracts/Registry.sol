@@ -23,7 +23,7 @@ contract Registry is Ownable {
     event AgentPaused(address indexed agent);
     event AgentUnpaused(address indexed agent);
     event GlobalPauseSet(bool paused);
-    event SettlementSet(address settlement);
+    event SettlementSet(address indexed settlement);
 
     modifier onlyAgentOwner(address agent) {
         require(agents[agent].owner == msg.sender, "Registry: not agent owner");
@@ -38,6 +38,7 @@ contract Registry is Ownable {
     constructor() Ownable(msg.sender) {}
 
     function setSettlement(address _settlement) external onlyOwner {
+        require(_settlement != address(0), "Registry: zero settlement");
         settlement = _settlement;
         emit SettlementSet(_settlement);
     }

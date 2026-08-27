@@ -123,6 +123,11 @@ contract RegistryTest is Test {
         registry.setSettlement(settlementAddr);
     }
 
+    function test_SetSettlement_RevertsOnZeroAddress() public {
+        vm.expectRevert("Registry: zero settlement");
+        registry.setSettlement(address(0));
+    }
+
     function _agentFields(address a)
         internal
         view

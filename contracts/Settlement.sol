@@ -113,6 +113,20 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
         uint256 nonce
     );
 
+    // Todos os setters do owner emitem evento — owner hoje e uma wallet unica
+    // (Turnkey, nao multisig ainda), entao monitoramento/alerta externo de mudanca
+    // de parametro de risco importa mais do que o normal.
+    event PriceOracleSet(address indexed tokenA, address indexed tokenB, address oracle);
+    event RateLimitSet(uint256 windowSeconds, uint256 maxTrades);
+    event MaxPriceDeviationBpsSet(uint256 bps);
+    event MaxOracleStalenessSet(uint256 seconds_);
+    event MaxTradeAmountSet(address indexed token, uint256 amount);
+    event MaxVolumePerWindowSet(address indexed token, uint256 amount);
+    event VolumeWindowDurationSet(uint256 durationSeconds);
+    event TradingEnabledSet(bool enabled);
+    event FeeBpsSet(uint256 bps);
+    event FeeRecipientSet(address indexed recipient);
+
     constructor(address _registry) EIP712("AgentRFQSettlement", "1") Ownable(msg.sender) {
         require(_registry != address(0), "Settlement: zero registry");
         registry = IRegistry(_registry);
@@ -122,24 +136,29 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
         oracleConfig[tokenA][tokenB] = OracleConfig({
             oracle: oracle, decimalsA: IERC20Metadata(tokenA).decimals(), decimalsB: IERC20Metadata(tokenB).decimals()
         });
+        emit PriceOracleSet(tokenA, tokenB, oracle);
     }
 
     function setRateLimit(uint256 windowSeconds, uint256 maxTrades) external onlyOwner {
         rateLimitWindow = windowSeconds;
         maxTradesPerWindow = maxTrades;
+        emit RateLimitSet(windowSeconds, maxTrades);
     }
 
     function setMaxPriceDeviationBps(uint256 bps) external onlyOwner {
         require(bps <= MAX_PRICE_DEVIATION_BPS, "Settlement: deviation too high");
         maxPriceDeviationBps = bps;
+        emit MaxPriceDeviationBpsSet(bps);
     }
 
     function setMaxOracleStaleness(uint256 seconds_) external onlyOwner {
         maxOracleStaleness = seconds_;
+        emit MaxOracleStalenessSet(seconds_);
     }
 
     function setMaxTradeAmount(address token, uint256 amount) external onlyOwner {
         maxTradeAmount[token] = amount;
+        emit MaxTradeAmountSet(token, amount);
     }
 
     function setMaxVolumePerWindow(address token, uint256 amount) external onlyOwner {
@@ -148,23 +167,29 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
         // de um período em que o teto esteve desligado (amount == 0) ou era outro valor
         volumeWindowStart[token] = block.timestamp;
         volumeInWindow[token] = 0;
+        emit MaxVolumePerWindowSet(token, amount);
     }
 
     function setVolumeWindowDuration(uint256 durationSeconds) external onlyOwner {
         volumeWindowDuration = durationSeconds;
+        emit VolumeWindowDurationSet(durationSeconds);
     }
 
     function setTradingEnabled(bool enabled) external onlyOwner {
         tradingEnabled = enabled;
+        emit TradingEnabledSet(enabled);
     }
 
     function setFeeBps(uint256 bps) external onlyOwner {
         require(bps <= MAX_FEE_BPS, "Settlement: fee too high");
         feeBps = bps;
+        emit FeeBpsSet(bps);
     }
 
     function setFeeRecipient(address recipient) external onlyOwner {
+        require(recipient != address(0), "Settlement: zero fee recipient");
         feeRecipient = recipient;
+        emit FeeRecipientSet(recipient);
     }
 
     function hashQuote(Quote calldata q) public view returns (bytes32) {
@@ -236,6 +261,12 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
             ) {} catch {}
         }
 
+        // slither-disable-next-line arbitrary-send-erc20-permit
+        // `from` aqui e q.maker, nao o msg.sender do permit acima — autorizado pela
+        // assinatura EIP-712 do proprio maker (signer == q.maker, checado no topo
+        // desta funcao), nao pelo permit (que so cobre a allowance do taker sobre
+        // q.takerToken). Slither nao enxerga a ligacao entre os dois; verificado
+        // manualmente que sao autorizacoes independentes.
         IERC20(q.makerToken).safeTransferFrom(q.maker, msg.sender, q.makerAmount);
         // taxa cobrada uma vez só, no lado que o taker paga (o "input" da troca do
         // ponto de vista de quem inicia o fill) — mesmo padrão da Uniswap
@@ -307,6 +338,10 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
         }
         require(cfg.oracle != address(0), "Settlement: pair not listed");
 
+        // roundId/answeredInRound de latestRoundData() ignorados de propósito: a
+        // checagem de staleness via updatedAt já cobre round obsoleto, e comparar
+        // answeredInRound >= roundId quebra feeds L2/sequencer legítimos (guidance
+        // atual da Chainlink não recomenda mais essa checagem)
         (, int256 answer,, uint256 updatedAt,) = IPriceOracle(cfg.oracle).latestRoundData();
         require(answer > 0, "Settlement: bad oracle answer");
         require(block.timestamp - updatedAt <= maxOracleStaleness, "Settlement: stale oracle");
@@ -326,6 +361,8 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
         uint256 impliedPrice = reversed
             ? (q.makerAmount * (10 ** takerDec) * (10 ** oracleDec)) / (q.takerAmount * (10 ** makerDec))
             : (q.takerAmount * (10 ** makerDec) * (10 ** oracleDec)) / (q.makerAmount * (10 ** takerDec));
+        // casting to 'uint256' is safe because require(answer > 0) above already rules out negative
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint256 oraclePrice = uint256(answer);
 
         uint256 diff = impliedPrice > oraclePrice ? impliedPrice - oraclePrice : oraclePrice - impliedPrice;

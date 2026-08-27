@@ -352,6 +352,18 @@ contract SettlementTest is Test {
         settlement.setFeeBps(1001); // acima do teto de 10%
     }
 
+    function test_SetFeeRecipient_RevertsOnZeroAddress() public {
+        vm.expectRevert("Settlement: zero fee recipient");
+        settlement.setFeeRecipient(address(0));
+    }
+
+    function test_SetFeeRecipient_EmitsEvent() public {
+        address treasury = makeAddr("treasury");
+        vm.expectEmit(true, false, false, false);
+        emit Settlement.FeeRecipientSet(treasury);
+        settlement.setFeeRecipient(treasury);
+    }
+
     // ---------- achados da revisão adversarial/code-review ----------
 
     // cadastrar só (weth, usdc) já libera negociação nos dois sentidos — não precisa
