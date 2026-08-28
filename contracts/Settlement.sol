@@ -256,9 +256,9 @@ contract Settlement is EIP712, Ownable, ReentrancyGuard {
         usedNonces[q.maker][q.nonce] = true;
 
         if (permit.deadline != 0) {
-            try IERC20Permit(q.takerToken).permit(
-                msg.sender, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s
-            ) {} catch {}
+            try IERC20Permit(q.takerToken)
+                .permit(msg.sender, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s) {}
+                catch {}
         }
 
         // slither-disable-next-line arbitrary-send-erc20-permit
