@@ -1,8 +1,10 @@
 // Exemplo de agente "maker": conecta no Relay, se inscreve num par de token, e
 // responde toda RFQ que receber com uma cotação assinada, a uma taxa fixa simples.
 //
-// Rodar: node --env-file=.env --experimental-strip-types examples/makerClient.ts
-// (ou compilar com tsc antes) com MAKER_PRIVATE_KEY, MAKER_TOKEN, TAKER_TOKEN e
+// Rodar: npx tsx --env-file=.env examples/makerClient.ts
+// (node --experimental-strip-types falha em Node >=24 nesse arquivo: os imports
+// usam extensao .js apontando pra .ts, resolucao que o strip-types nativo do
+// node nao faz, so tsx) com MAKER_PRIVATE_KEY, MAKER_TOKEN, TAKER_TOKEN e
 // RATE_NUMERATOR/RATE_DENOMINATOR definidos no ambiente.
 
 import WebSocket from "ws";

@@ -1,8 +1,11 @@
 // Exemplo de agente "taker": conecta no Relay, pede uma cotação, imprime a
 // melhor resposta recebida e encerra.
 //
-// Rodar: node --env-file=.env --experimental-strip-types examples/takerClient.ts
-// com TAKER_PRIVATE_KEY, MAKER_TOKEN, TAKER_TOKEN e TAKER_AMOUNT no ambiente.
+// Rodar: npx tsx --env-file=.env examples/takerClient.ts
+// (node --experimental-strip-types falha em Node >=24 nesse arquivo: os imports
+// usam extensao .js apontando pra .ts, resolucao que o strip-types nativo do
+// node nao faz, so tsx) com TAKER_PRIVATE_KEY, MAKER_TOKEN, TAKER_TOKEN e
+// TAKER_AMOUNT no ambiente.
 
 import { randomUUID } from "node:crypto";
 import WebSocket from "ws";
