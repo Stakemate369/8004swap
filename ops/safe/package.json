@@ -1,0 +1,11 @@
+{
+  "name": "safe-ops",
+  "version": "1.0.0",
+  "description": "Deploy and manage the 2-of-3 Safe that owns Registry/Settlement",
+  "type": "module",
+  "license": "ISC",
+  "dependencies": {
+    "@safe-global/protocol-kit": "^8.0.6",
+    "viem": "^2.56.0"
+  }
+}
