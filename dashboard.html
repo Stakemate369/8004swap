@@ -1,0 +1,473 @@
+<title>8004Swap Ledger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #f3f4f7;
+    --surface: #ffffff;
+    --surface-2: #eceef2;
+    --ink: #12151f;
+    --ink-2: #4a4f5e;
+    --ink-3: #7b8094;
+    --border: #dfe2e8;
+    --accent: #a8721f;
+    --accent-ink: #6e4c14;
+    --accent-soft: #f2e6d0;
+    --good: #1e7a4f;
+    --good-soft: #dcefe4;
+    --shadow: 0 1px 2px rgba(18,21,31,0.04), 0 8px 24px -12px rgba(18,21,31,0.10);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0d13;
+      --surface: #12151e;
+      --surface-2: #191d29;
+      --ink: #edeff4;
+      --ink-2: #b4b9c7;
+      --ink-3: #767c8c;
+      --border: #262b38;
+      --accent: #d9a94a;
+      --accent-ink: #f2d093;
+      --accent-soft: #2a2211;
+      --good: #49b788;
+      --good-soft: #10281f;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -14px rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0d13;
+    --surface: #12151e;
+    --surface-2: #191d29;
+    --ink: #edeff4;
+    --ink-2: #b4b9c7;
+    --ink-3: #767c8c;
+    --border: #262b38;
+    --accent: #d9a94a;
+    --accent-ink: #f2d093;
+    --accent-soft: #2a2211;
+    --good: #49b788;
+    --good-soft: #10281f;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -14px rgba(0,0,0,0.55);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; }
+
+  /* ---- top bar ---- */
+  .topbar {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+    padding-bottom: 20px; margin-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .wordmark {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600; font-size: 22px; letter-spacing: -0.01em;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .wordmark .tag {
+    font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 11px;
+    color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase;
+    border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px;
+  }
+  .topbar-meta {
+    display: flex; align-items: center; gap: 14px;
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-3);
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 9px; border-radius: 100px; border: 1px solid var(--border);
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; font-weight: 500;
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); flex: none; }
+  .pill.good { color: var(--good); border-color: color-mix(in oklab, var(--good) 35%, var(--border)); background: var(--good-soft); }
+
+  /* ---- thesis ---- */
+  .thesis {
+    font-family: "Fraunces", Georgia, serif; font-weight: 500;
+    font-size: clamp(20px, 2.6vw, 27px); line-height: 1.32;
+    max-width: 46ch; text-wrap: balance; margin: 0 0 32px;
+    color: var(--ink);
+  }
+  .thesis em { font-style: normal; color: var(--accent-ink); background: var(--accent-soft); padding: 0 3px; border-radius: 3px; }
+
+  /* ---- stat grid ---- */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; margin-bottom: 40px;
+    box-shadow: var(--shadow);
+  }
+  .stat {
+    background: var(--surface); padding: 18px 18px 16px;
+    display: flex; flex-direction: column; gap: 6px;
+    text-decoration: none; color: inherit;
+    transition: background 0.12s ease;
+  }
+  .stat:hover { background: var(--surface-2); }
+  .stat-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .stat-value {
+    font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 25px;
+    font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.15;
+  }
+  .stat-sub { font-size: 12px; color: var(--ink-3); font-family: "IBM Plex Mono", monospace; }
+  .stat-link { font-size: 11px; color: var(--accent-ink); margin-top: auto; padding-top: 6px; }
+
+  /* ---- section ---- */
+  .section { margin-bottom: 40px; }
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .section-note { font-size: 12.5px; color: var(--ink-3); }
+
+  .grid-2 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 20px; align-items: start; }
+
+  /* ---- ledger table ---- */
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink-3);
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 11px 14px; border-bottom: 1px solid var(--border);
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px; vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface-2); }
+  .mono-link {
+    color: var(--ink-2); text-decoration: none; border-bottom: 1px dotted var(--ink-3);
+  }
+  .mono-link:hover { color: var(--accent-ink); border-color: var(--accent-ink); }
+  .amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .amt .tok { color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+  .table-scroll { overflow-x: auto; }
+  .table-empty-note {
+    padding: 16px 18px; font-size: 12.5px; color: var(--ink-3); font-family: "IBM Plex Sans", sans-serif;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ---- multisig panel ---- */
+  .panel { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+  .signers { display: flex; flex-direction: column; gap: 8px; }
+  .signer {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 8px; background: var(--surface-2);
+  }
+  .signer-badge {
+    width: 22px; height: 22px; border-radius: 50%; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600;
+    background: var(--accent-soft); color: var(--accent-ink);
+  }
+  .signer-addr { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-2); }
+  .threshold-line {
+    display: flex; align-items: center; gap: 8px; font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px; color: var(--ink-2); padding-top: 2px;
+  }
+  .threshold-line b { color: var(--ink); font-weight: 600; }
+
+  .kv { display: flex; flex-direction: column; gap: 10px; }
+  .kv-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .kv-k { font-size: 12px; color: var(--ink-3); }
+  .kv-v { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; text-align: right; }
+
+  /* ---- oracle strip ---- */
+  .oracles { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+  .oracle { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+  .oracle-pair { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-3); letter-spacing: 0.04em; }
+  .oracle-price { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .oracle-age { font-size: 11.5px; color: var(--ink-3); }
+
+  /* ---- footer / verify ---- */
+  .verify {
+    border: 1px dashed var(--border); border-radius: 12px; padding: 20px 22px;
+    background: var(--surface);
+  }
+  .verify h3 {
+    font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 17px; margin: 0 0 6px;
+  }
+  .verify p { margin: 0 0 14px; color: var(--ink-2); font-size: 13.5px; max-width: 62ch; }
+  .verify-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .verify-links a {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink);
+    text-decoration: none; border: 1px solid var(--border); border-radius: 7px;
+    padding: 7px 11px; display: inline-flex; align-items: center; gap: 6px;
+    transition: border-color 0.12s ease, color 0.12s ease;
+  }
+  .verify-links a:hover { border-color: var(--accent); color: var(--accent-ink); }
+  .verify-links a svg { width: 11px; height: 11px; opacity: 0.55; }
+
+  .fine {
+    margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+  .fine a { color: var(--ink-3); }
+
+  @media (max-width: 760px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .oracles { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="wordmark">8004Swap <span class="tag">ledger</span></div>
+    <div class="topbar-meta">
+      <span class="pill good"><span class="dot"></span>Trading enabled</span>
+      <span class="pill">Base Sepolia · testnet</span>
+      <span id="blockPill" class="pill">block —</span>
+    </div>
+  </div>
+
+  <p class="thesis">
+    8004Swap is a non&#8209;custodial RFQ exchange restricted to autonomous agents.
+    Every number on this page is <em>read directly from the deployed contracts</em> —
+    nothing here is self&#8209;reported, cached behind a login, or gated behind an admin key.
+  </p>
+
+  <div class="stats" id="statGrid"></div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Chainlink oracles feeding the pricer</div>
+      <div class="section-note" id="oracleNote"></div>
+    </div>
+    <div class="oracles" id="oracleGrid"></div>
+  </div>
+
+  <div class="section grid-2">
+    <div>
+      <div class="section-head">
+        <div class="section-title">Trade ledger — every fill, ever</div>
+        <div class="section-note">Settlement <code style="font-family:'IBM Plex Mono',monospace;">QuoteFilled</code> events, deploy block → tip</div>
+      </div>
+      <div class="card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>When</th><th>Maker gave</th><th>Taker gave</th><th>Tx</th></tr>
+            </thead>
+            <tbody id="tradeBody"></tbody>
+          </table>
+        </div>
+        <div class="table-empty-note" id="tradeNote"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-head">
+        <div class="section-title">Who controls it</div>
+      </div>
+      <div class="card panel">
+        <div class="signers" id="signerList"></div>
+        <div class="threshold-line" id="thresholdLine"></div>
+        <div class="kv" id="contractKv" style="border-top:1px solid var(--border); padding-top:14px; margin-top:2px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section verify">
+    <h3>Verify this yourself</h3>
+    <p>
+      No part of this page requires trusting us. Pull the same data straight from a block
+      explorer or your own RPC — the contract addresses and event signatures are public.
+    </p>
+    <div class="verify-links" id="verifyLinks"></div>
+  </div>
+
+  <div class="fine">
+    <span id="snapshotLine"></span>
+    <span><a href="https://github.com/Stakemate369/8004swap" target="_blank" rel="noopener">github.com/Stakemate369/8004swap</a></span>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  fetchedAt: "2026-08-31T22:37:15.136Z",
+  latestBlock: "46223773",
+  contracts: {
+    registry: "0x7Bb793b6Ada038cf9c26c6BB54cA15Db6BD35ed1",
+    settlement: "0x5Cc2558dF13739c05cb57Caf0E9cfe1629a6a945",
+    safe: "0xa520Dbae06a187068e0F02333e3B02CDF7d4B7e3"
+  },
+  settlement: {
+    feeBps: "15",
+    feeRecipient: "0x490BA3323caF9daB19e2c9f8B25f8E87323257ed",
+    owner: "0xa520Dbae06a187068e0F02333e3B02CDF7d4B7e3",
+    tradingEnabled: true,
+    maxFeeBps: "1000"
+  },
+  registry: { owner: "0xa520Dbae06a187068e0F02333e3B02CDF7d4B7e3" },
+  safe: {
+    owners: [
+      "0x490BA3323caF9daB19e2c9f8B25f8E87323257ed",
+      "0x9AAf6Ef0f6A4D98086B0efd4b12c3758278E1aF3",
+      "0xd9ea8bEaC6d0b2ca8b9c7fbB00A3f32d1380d8c5"
+    ],
+    threshold: "2"
+  },
+  oracles: {
+    ethUsd: { price: "2471.15590291", updatedAt: 1788214844 },
+    usdcUsd: { price: "0.99999459", updatedAt: 1788182946 }
+  },
+  trades: [
+    { txHash: "0x9e55a0dbd30fedb7d3a562b7617a361df3cca26d160787a8a6ebda93b4ca29bc", blockNumber: "45960066", timestamp: 1787688420, maker: "0xFcac0caEcc0C2785d5Db6bDe961AF8B6F43eAcBE", taker: "0x88ef952CA5d2506DfD77dC86A1746A2424AD07c0", makerToken: "0x4200000000000000000000000000000000000006", takerToken: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", makerAmount: "406381300000000", takerAmount: "1000000", nonce: "1787688412259" },
+    { txHash: "0x55566e589a401cc21de4de09bf0c1b4889e204e34e8edf487bb41a636a649513", blockNumber: "45960609", timestamp: 1787689506, maker: "0xFcac0caEcc0C2785d5Db6bDe961AF8B6F43eAcBE", taker: "0x88ef952CA5d2506DfD77dC86A1746A2424AD07c0", makerToken: "0x4200000000000000000000000000000000000006", takerToken: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", makerAmount: "406381300000000", takerAmount: "1000000", nonce: "1787689499462" },
+    { txHash: "0x73b5a7cf5bc59e53218c660fe80966acff6fa901b74c5c07eac39abfaf3dd58a", blockNumber: "46104611", timestamp: 1787977510, maker: "0xFcac0caEcc0C2785d5Db6bDe961AF8B6F43eAcBE", taker: "0x88ef952CA5d2506DfD77dC86A1746A2424AD07c0", makerToken: "0x4200000000000000000000000000000000000006", takerToken: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", makerAmount: "41034058268362", takerAmount: "100000", nonce: "1787977502173" }
+  ],
+  agents: [
+    { agent: "0xFcac0caEcc0C2785d5Db6bDe961AF8B6F43eAcBE", metadataURI: "8004swap-test-maker" },
+    { agent: "0x88ef952CA5d2506DfD77dC86A1746A2424AD07c0", metadataURI: "8004swap-test-taker" }
+  ]
+};
+
+const EXPLORER = "https://sepolia.basescan.org";
+const TOKENS = {
+  "0x4200000000000000000000000000000000000006": { symbol: "WETH", decimals: 18 },
+  "0x036cbd53842c5426634e7929541ec2318f3dcf7e": { symbol: "USDC", decimals: 6 }
+};
+
+function short(addr) { return addr.slice(0, 6) + "…" + addr.slice(-4); }
+function tokenFor(addr) { return TOKENS[addr.toLowerCase()] || { symbol: short(addr), decimals: 18 }; }
+function fmtAmount(raw, decimals) {
+  const v = Number(raw) / Math.pow(10, decimals);
+  return v.toLocaleString(undefined, { maximumFractionDigits: decimals >= 18 ? 6 : 4 });
+}
+function fmtDate(unixSeconds) {
+  const d = new Date(unixSeconds * 1000);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " · " +
+         d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+function agoFrom(unixSeconds) {
+  const mins = Math.round((Date.now() - unixSeconds * 1000) / 60000);
+  if (mins < 60) return mins + "m ago";
+  const hrs = Math.round(mins / 60);
+  if (hrs < 48) return hrs + "h ago";
+  return Math.round(hrs / 24) + "d ago";
+}
+function el(tag, attrs, ...children) {
+  const e = document.createElement(tag);
+  for (const k in attrs || {}) {
+    if (k === "text") e.textContent = attrs[k];
+    else if (k === "html") e.innerHTML = attrs[k];
+    else e.setAttribute(k, attrs[k]);
+  }
+  children.flat().forEach(c => { if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+  return e;
+}
+
+// block / snapshot meta
+document.getElementById("blockPill").textContent = "block " + Number(DATA.latestBlock).toLocaleString();
+document.getElementById("snapshotLine").textContent =
+  "Snapshot as of " + new Date(DATA.fetchedAt).toLocaleString() + " (block " + Number(DATA.latestBlock).toLocaleString() + ") — this page does not auto-refresh, re-open for the latest state.";
+
+// stat grid
+const feePct = (Number(DATA.settlement.feeBps) / 100).toString() + "%";
+const stats = [
+  { label: "Protocol fee", value: feePct, sub: `${DATA.settlement.feeBps} / ${DATA.settlement.maxFeeBps} bps cap`, href: EXPLORER + "/address/" + DATA.contracts.settlement + "#readContract" },
+  { label: "Fills settled", value: String(DATA.trades.length), sub: "all-time, all test-net", href: EXPLORER + "/address/" + DATA.contracts.settlement + "#events" },
+  { label: "Agents registered", value: String(DATA.agents.length), sub: "ERC-8004-gated identities", href: EXPLORER + "/address/" + DATA.contracts.registry + "#events" },
+  { label: "Owner", value: "2-of-3 Safe", sub: short(DATA.contracts.safe), href: EXPLORER + "/address/" + DATA.contracts.safe },
+];
+const statGrid = document.getElementById("statGrid");
+stats.forEach(s => {
+  statGrid.appendChild(el("a", { class: "stat", href: s.href, target: "_blank", rel: "noopener" },
+    el("span", { class: "stat-label", text: s.label }),
+    el("span", { class: "stat-value", text: s.value }),
+    el("span", { class: "stat-sub", text: s.sub }),
+    el("span", { class: "stat-link", text: "View on Basescan →" })
+  ));
+});
+
+// oracles
+document.getElementById("oracleNote").textContent = "Same feed used by every RFQ price-sanity check";
+const oracleGrid = document.getElementById("oracleGrid");
+[
+  { pair: "ETH / USD", price: DATA.oracles.ethUsd.price, updatedAt: DATA.oracles.ethUsd.updatedAt },
+  { pair: "USDC / USD", price: DATA.oracles.usdcUsd.price, updatedAt: DATA.oracles.usdcUsd.updatedAt },
+].forEach(o => {
+  oracleGrid.appendChild(el("div", { class: "oracle" },
+    el("span", { class: "oracle-pair", text: o.pair }),
+    el("span", { class: "oracle-price", text: "$" + Number(o.price).toLocaleString(undefined, { maximumFractionDigits: 4 }) }),
+    el("span", { class: "oracle-age", text: "updated " + agoFrom(o.updatedAt) })
+  ));
+});
+
+// trade ledger
+const tradeBody = document.getElementById("tradeBody");
+DATA.trades.slice().reverse().forEach(t => {
+  const mk = tokenFor(t.makerToken), tk = tokenFor(t.takerToken);
+  tradeBody.appendChild(el("tr", {},
+    el("td", { text: fmtDate(t.timestamp) }),
+    el("td", {}, el("span", { class: "amt" }, fmtAmount(t.makerAmount, mk.decimals), el("span", { class: "tok", text: mk.symbol }))),
+    el("td", {}, el("span", { class: "amt" }, fmtAmount(t.takerAmount, tk.decimals), el("span", { class: "tok", text: tk.symbol }))),
+    el("td", {}, el("a", { class: "mono-link", href: EXPLORER + "/tx/" + t.txHash, target: "_blank", rel: "noopener", text: short(t.txHash) }))
+  ));
+});
+document.getElementById("tradeNote").textContent =
+  "This is the complete list — 8004Swap is pre-launch on testnet, so every fill is our own validation traffic, shown in full rather than rounded up.";
+
+// signers
+const signerList = document.getElementById("signerList");
+const labels = ["Automation key", "Passkey signer", "Passkey signer"];
+DATA.safe.owners.forEach((addr, i) => {
+  signerList.appendChild(el("div", { class: "signer" },
+    el("div", { class: "signer-badge", text: String(i + 1) }),
+    el("div", { style: "display:flex; flex-direction:column; gap:1px;" },
+      el("span", { class: "signer-addr", text: short(addr) }),
+      el("span", { style: "font-size:10.5px; color:var(--ink-3); font-family:'IBM Plex Sans',sans-serif;", text: labels[i] })
+    )
+  ));
+});
+document.getElementById("thresholdLine").innerHTML =
+  `<b>${DATA.safe.threshold} of ${DATA.safe.owners.length}</b>&nbsp;signatures required — no single key, including our own automation, can act alone.`;
+
+const contractKv = document.getElementById("contractKv");
+[
+  ["Registry", DATA.contracts.registry],
+  ["Settlement", DATA.contracts.settlement],
+  ["Fee recipient", DATA.settlement.feeRecipient],
+].forEach(([k, v]) => {
+  contractKv.appendChild(el("div", { class: "kv-row" },
+    el("span", { class: "kv-k", text: k }),
+    el("a", { class: "kv-v mono-link", href: EXPLORER + "/address/" + v, target: "_blank", rel: "noopener", text: short(v) })
+  ));
+});
+
+// verify links
+const verifyLinks = document.getElementById("verifyLinks");
+[
+  ["Registry contract", EXPLORER + "/address/" + DATA.contracts.registry + "#code"],
+  ["Settlement contract", EXPLORER + "/address/" + DATA.contracts.settlement + "#code"],
+  ["Safe (2-of-3 owner)", EXPLORER + "/address/" + DATA.contracts.safe],
+  ["Protocol spec (PROTOCOL.md)", "https://github.com/Stakemate369/8004swap/blob/main/PROTOCOL.md"],
+  ["Source code", "https://github.com/Stakemate369/8004swap"],
+].forEach(([label, href]) => {
+  verifyLinks.appendChild(el("a", { href, target: "_blank", rel: "noopener" }, label, "↗"));
+});
+</script>
