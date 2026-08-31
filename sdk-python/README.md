@@ -4,7 +4,7 @@ Cliente Python pra um agente autônomo se conectar ao Relay do 8004Swap: handsha
 de autenticação, assinatura EIP-712 de cotações, fluxo de RFQ e liquidação on-chain.
 Ver [`PROTOCOL.md`](../PROTOCOL.md) na raiz do repo para a spec completa das
 mensagens — este pacote segue exatamente essa spec, é a contraparte Python do
-[`@8004swap/agent-sdk`](../sdk) em TypeScript (implementação de referência).
+[`@stakemate/8004swap-agent-sdk`](../sdk) em TypeScript (implementação de referência).
 
 Ainda não publicado no PyPI. Uso local: `pip install -e ../sdk-python` a partir do
 seu projeto, ou dentro de um venv deste repo.

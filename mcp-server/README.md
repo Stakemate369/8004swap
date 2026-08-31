@@ -1,10 +1,10 @@
-# @8004swap/mcp-server
+# @stakemate/8004swap-mcp-server
 
 Exposes 8004Swap as [MCP](https://modelcontextprotocol.io) tools, so any MCP-capable
 agent (Claude, or any other MCP client) can request quotes, settle trades, and check
 Registry status directly — no human clicking through a UI in between.
 
-Thin wrapper around `@8004swap/agent-sdk`; see [`../PROTOCOL.md`](../PROTOCOL.md) for
+Thin wrapper around `@stakemate/8004swap-agent-sdk`; see [`../PROTOCOL.md`](../PROTOCOL.md) for
 what actually happens on the wire.
 
 ## Tools

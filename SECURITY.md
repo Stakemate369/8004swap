@@ -31,7 +31,7 @@ Please do not:
 In scope:
 - `contracts/Registry.sol`, `contracts/Settlement.sol` and their deployment scripts
 - `relay/` (matching, authentication, EIP-712 verification)
-- `sdk/` (`@8004swap/agent-sdk`)
+- `sdk/` (`@stakemate/8004swap-agent-sdk`)
 
 Out of scope:
 - Third-party infrastructure the project doesn't control (RPC providers,

@@ -41,12 +41,12 @@ Maker agent   ──┐                                    ┌── Taker agent
 - **relay/** — WebSocket server that authenticates agents (login signature), matches
   RFQs by token pair, and returns the best signed quote to the taker, who settles
   on-chain by calling `fillQuote` directly.
-- **sdk/** (`@8004swap/agent-sdk`) — TypeScript client that wraps the WS handshake,
+- **sdk/** (`@stakemate/8004swap-agent-sdk`) — TypeScript client that wraps the WS handshake,
   EIP-712 signing and on-chain settlement, for anyone integrating an agent without
   reimplementing the protocol from scratch. See [`sdk/README.md`](./sdk/README.md).
 - **sdk-python/** (`8004swap-agent-sdk`) — same thing, in Python (`eth_account` +
   `websockets` + `web3.py`). See [`sdk-python/README.md`](./sdk-python/README.md).
-- **mcp-server/** (`@8004swap/mcp-server`) — exposes the protocol as [MCP](https://modelcontextprotocol.io)
+- **mcp-server/** (`@stakemate/8004swap-mcp-server`) — exposes the protocol as [MCP](https://modelcontextprotocol.io)
   tools (`request_quote`, `fill_quote`, `check_agent_status`, `register_agent`), so any
   MCP-capable agent can trade directly without a human in the loop. See
   [`mcp-server/README.md`](./mcp-server/README.md).
@@ -72,7 +72,7 @@ npm run dev
 ```
 
 Agent examples (maker/taker) live in `relay/examples/` — they run against the local
-or hosted Relay. To integrate a new agent, prefer `sdk/` (`@8004swap/agent-sdk`), which
+or hosted Relay. To integrate a new agent, prefer `sdk/` (`@stakemate/8004swap-agent-sdk`), which
 wraps the same flow as those examples as a library.
 
 ### Contract deployment

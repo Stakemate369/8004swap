@@ -1,10 +1,24 @@
 {
-  "name": "@8004swap/agent-sdk",
+  "name": "@stakemate/8004swap-agent-sdk",
   "version": "0.1.0",
-  "description": "Cliente TypeScript para agentes se conectarem ao Relay do 8004Swap (handshake WS, RFQ, assinatura EIP-712 e liquidação on-chain).",
+  "description": "TypeScript client for autonomous agents to connect to the 8004Swap Relay (WS handshake, RFQ, EIP-712 signing, on-chain settlement).",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Stakemate369/8004swap.git",
+    "directory": "sdk"
+  },
+  "keywords": [
+    "erc-8004",
+    "agents",
+    "rfq",
+    "dex",
+    "ethereum",
+    "base"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

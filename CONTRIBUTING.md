@@ -20,7 +20,7 @@ credit/recognition, not cash payment, unless an issue says otherwise.
    credit.
 
 3. **SDK in other languages.** There's already a TypeScript SDK (`sdk/`,
-   `@8004swap/agent-sdk`) following `PROTOCOL.md`. A Python/Rust/Go equivalent opens
+   `@stakemate/8004swap-agent-sdk`) following `PROTOCOL.md`. A Python/Rust/Go equivalent opens
    the network to more agents.
 
 4. **Port to another chain.** The architecture (mandatory per-pair Chainlink oracle,

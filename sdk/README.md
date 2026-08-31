@@ -1,21 +1,22 @@
-# @8004swap/agent-sdk
+# @stakemate/8004swap-agent-sdk
 
-Cliente TypeScript pra um agente autônomo se conectar ao Relay do 8004Swap: handshake
-de autenticação, assinatura EIP-712 de cotações, fluxo de RFQ e liquidação on-chain.
-Ver [`PROTOCOL.md`](../PROTOCOL.md) na raiz do repo para a spec completa das mensagens
-— este pacote é a implementação de referência dela.
+TypeScript client for an autonomous agent to connect to the 8004Swap Relay:
+authentication handshake, EIP-712 quote signing, the RFQ flow, and on-chain settlement.
+See [`PROTOCOL.md`](../PROTOCOL.md) in the repo root for the full message spec — this
+package is its reference implementation.
 
-Ainda não publicado no npm. Uso local: `npm install ../sdk` a partir do seu projeto,
-ou copie o `dist/` depois de `npm run build`.
+```shell
+npm install @stakemate/8004swap-agent-sdk
+```
 
-## Maker (cotar RFQs recebidas)
+## Maker (quote incoming RFQs)
 
 ```ts
-import { AgentClient, signQuote } from "@8004swap/agent-sdk";
+import { AgentClient, signQuote } from "@stakemate/8004swap-agent-sdk";
 import { privateKeyToAccount } from "viem/accounts";
 
 const client = new AgentClient({
-  relayUrl: "wss://tfafa12os5cu5fo0i4bakg8384.ingress.akash-palmito.org",
+  relayUrl: "wss://8arfgh3e11ds7dodiidv9bo7uo.ingress.zencloud.eu",
   account: privateKeyToAccount(process.env.MAKER_PRIVATE_KEY as `0x${string}`),
   chainId: 84532, // Base Sepolia
   settlementAddress: "0x5Cc2558dF13739c05cb57Caf0E9cfe1629a6a945",
@@ -36,27 +37,27 @@ client.onRfqBroadcast((rfq) => ({
 }));
 ```
 
-## Taker (pedir cotação e liquidar)
+## Taker (request a quote and settle)
 
 ```ts
-import { AgentClient, fillQuote, waitForFill } from "@8004swap/agent-sdk";
+import { AgentClient, fillQuote, waitForFill } from "@stakemate/8004swap-agent-sdk";
 import { createWalletClient, createPublicClient, http } from "viem";
 
 const client = new AgentClient({ relayUrl, account, chainId, settlementAddress });
 await client.connect();
 
 const quotes = await client.requestQuote({ makerToken, takerToken, takerAmount: 1_000_000n });
-if (quotes.length === 0) throw new Error("sem cotação dentro da janela");
+if (quotes.length === 0) throw new Error("no quote within the window");
 
 const best = quotes[0];
 const hash = await fillQuote(walletClient, settlementAddress, best, best.signature);
 const receipt = await waitForFill(publicClient, hash);
 ```
 
-## O que este pacote NÃO faz
+## What this package does NOT do
 
-- Não gerencia `approve`/allowance por você — chame `fillQuoteWithPermit` (evita a tx
-  de approve separada, se o token suportar EIP-2612) ou aprove manualmente antes.
-- Não decide preço/estratégia de maker — o callback `onRfqBroadcast` é onde isso entra.
-- Não reconecta automaticamente numa queda de WebSocket (ainda) — trate `close`/`error`
-  no seu próprio código se precisar de retry.
+- Doesn't manage `approve`/allowance for you — call `fillQuoteWithPermit` (skips the
+  separate approve tx, if the token supports EIP-2612) or approve manually beforehand.
+- Doesn't decide maker price/strategy — the `onRfqBroadcast` callback is where that goes.
+- Doesn't auto-reconnect on a WebSocket drop (yet) — handle `close`/`error` in your own
+  code if you need retry behavior.

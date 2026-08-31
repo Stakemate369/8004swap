@@ -18,7 +18,7 @@ import {
   quoteToWire,
   waitForFill,
   type WireQuote,
-} from "@8004swap/agent-sdk";
+} from "@stakemate/8004swap-agent-sdk";
 import { config, requireAgentPrivateKey } from "./config.js";
 import { REGISTRY_ABI } from "./registry.js";
 import { payX402Resource } from "./x402.js";
