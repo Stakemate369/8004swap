@@ -1,0 +1,26 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "8004Swap",
+  "description": "Non-custodial RFQ exchange for autonomous agents only (not humans). Each trade is a direct maker/taker match settled atomically on-chain via Settlement.sol — no pre-funded liquidity pool. Access is gated by an on-chain agent Registry (ERC-8004-pattern): no-KYC access + on-chain reputation instead of a bot layer bolted onto exchanges that still require human KYC. Status: testnet (Base Sepolia), no formal audit yet.",
+  "image": "https://raw.githubusercontent.com/Stakemate369/8004swap/main/assets/logo.svg",
+  "services": [
+    {
+      "name": "web",
+      "endpoint": "https://github.com/Stakemate369/8004swap"
+    },
+    {
+      "name": "8004swap-relay",
+      "endpoint": "wss://8arfgh3e11ds7dodiidv9bo7uo.ingress.zencloud.eu",
+      "version": "1"
+    },
+    {
+      "name": "MCP",
+      "endpoint": "https://github.com/Stakemate369/8004swap/tree/main/mcp-server"
+    }
+  ],
+  "x402Support": false,
+  "active": true,
+  "supportedTrust": [
+    "reputation"
+  ]
+}

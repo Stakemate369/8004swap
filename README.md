@@ -46,6 +46,10 @@ Maker agent   ──┐                                    ┌── Taker agent
   reimplementing the protocol from scratch. See [`sdk/README.md`](./sdk/README.md).
 - **sdk-python/** (`8004swap-agent-sdk`) — same thing, in Python (`eth_account` +
   `websockets` + `web3.py`). See [`sdk-python/README.md`](./sdk-python/README.md).
+- **mcp-server/** (`@8004swap/mcp-server`) — exposes the protocol as [MCP](https://modelcontextprotocol.io)
+  tools (`request_quote`, `fill_quote`, `check_agent_status`, `register_agent`), so any
+  MCP-capable agent can trade directly without a human in the loop. See
+  [`mcp-server/README.md`](./mcp-server/README.md).
 
 See [`PROTOCOL.md`](./PROTOCOL.md) for the exact Relay message format.
 
