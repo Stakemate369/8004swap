@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>8004Swap Ledger</title>
+<meta name="description" content="Live on-chain state of the 8004Swap protocol — fee, fills, agents, oracle prices, and multisig signers, polled straight from Base Sepolia in your browser." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧾</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f3f4f7;
+    --surface: #ffffff;
+    --surface-2: #eceef2;
+    --ink: #12151f;
+    --ink-2: #4a4f5e;
+    --ink-3: #7b8094;
+    --border: #dfe2e8;
+    --accent: #a8721f;
+    --accent-ink: #6e4c14;
+    --accent-soft: #f2e6d0;
+    --good: #1e7a4f;
+    --good-soft: #dcefe4;
+    --bad: #b3452f;
+    --bad-soft: #f6e2dc;
+    --shadow: 0 1px 2px rgba(18,21,31,0.04), 0 8px 24px -12px rgba(18,21,31,0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0d13; --surface: #12151e; --surface-2: #191d29;
+      --ink: #edeff4; --ink-2: #b4b9c7; --ink-3: #767c8c; --border: #262b38;
+      --accent: #d9a94a; --accent-ink: #f2d093; --accent-soft: #2a2211;
+      --good: #49b788; --good-soft: #10281f; --bad: #e08063; --bad-soft: #2c1712;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -14px rgba(0,0,0,0.55);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
+  body {
+    margin: 0; color: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 15px; line-height: 1.5;
+  }
+  ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; }
+
+  .topbar { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 20px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+  .wordmark { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 22px; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 8px; }
+  .wordmark .tag { font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 11px; color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; }
+  .topbar-meta { display: flex; align-items: center; gap: 10px; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-3); flex-wrap: wrap; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 100px; border: 1px solid var(--border); font-family: "IBM Plex Mono", monospace; font-size: 11.5px; font-weight: 500; background: var(--surface); }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); flex: none; }
+  .pill.good { color: var(--good); border-color: color-mix(in oklab, var(--good) 35%, var(--border)); background: var(--good-soft); }
+  .pill.bad { color: var(--bad); border-color: color-mix(in oklab, var(--bad) 35%, var(--border)); background: var(--bad-soft); }
+  .pill.live .dot { animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in oklab, var(--good) 40%, transparent); } 50% { opacity: 0.55; box-shadow: 0 0 0 4px color-mix(in oklab, var(--good) 0%, transparent); } }
+  @media (prefers-reduced-motion: reduce) { .pill.live .dot { animation: none; } }
+  button.refresh { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; font-weight: 500; color: var(--ink-2); background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: 4px 10px; cursor: pointer; }
+  button.refresh:hover { color: var(--accent-ink); border-color: var(--accent); }
+
+  .thesis { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: clamp(20px, 2.6vw, 27px); line-height: 1.32; max-width: 46ch; text-wrap: balance; margin: 0 0 32px; }
+  .thesis em { font-style: normal; color: var(--accent-ink); background: var(--accent-soft); padding: 0 3px; border-radius: 3px; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 40px; box-shadow: var(--shadow); }
+  .stat { background: var(--surface); padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; transition: background 0.12s ease; position: relative; }
+  .stat:hover { background: var(--surface-2); }
+  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); }
+  .stat-value { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 25px; font-variant-numeric: tabular-nums; line-height: 1.15; transition: opacity 0.15s ease; }
+  .stat-value.stale { opacity: 0.35; }
+  .stat-sub { font-size: 12px; color: var(--ink-3); font-family: "IBM Plex Mono", monospace; }
+  .stat-link { font-size: 11px; color: var(--accent-ink); margin-top: auto; padding-top: 6px; }
+
+  .section { margin-bottom: 40px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .section-title { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+  .section-note { font-size: 12.5px; color: var(--ink-3); }
+  .grid-2 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 20px; align-items: start; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  tbody td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-family: "IBM Plex Mono", monospace; font-size: 12.5px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface-2); }
+  tbody tr.fresh { animation: flash 2.4s ease-out; }
+  @keyframes flash { 0% { background: var(--accent-soft); } 100% { background: transparent; } }
+  .mono-link { color: var(--ink-2); text-decoration: none; border-bottom: 1px dotted var(--ink-3); }
+  .mono-link:hover { color: var(--accent-ink); border-color: var(--accent-ink); }
+  .amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .amt .tok { color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+  .table-scroll { overflow-x: auto; }
+  .table-empty-note { padding: 16px 18px; font-size: 12.5px; color: var(--ink-3); border-top: 1px solid var(--border); }
+
+  .panel { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+  .signers { display: flex; flex-direction: column; gap: 8px; }
+  .signer { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; background: var(--surface-2); }
+  .signer-badge { width: 22px; height: 22px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600; background: var(--accent-soft); color: var(--accent-ink); }
+  .signer-addr { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-2); }
+  .threshold-line { display: flex; align-items: center; gap: 8px; font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--ink-2); padding-top: 2px; }
+  .threshold-line b { color: var(--ink); font-weight: 600; }
+  .kv { display: flex; flex-direction: column; gap: 10px; }
+  .kv-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .kv-k { font-size: 12px; color: var(--ink-3); }
+  .kv-v { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; text-align: right; }
+
+  .oracles { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+  .oracle { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+  .oracle-pair { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-3); letter-spacing: 0.04em; }
+  .oracle-price { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .oracle-age { font-size: 11.5px; color: var(--ink-3); }
+
+  .verify { border: 1px dashed var(--border); border-radius: 12px; padding: 20px 22px; background: var(--surface); }
+  .verify h3 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 17px; margin: 0 0 6px; }
+  .verify p { margin: 0 0 14px; color: var(--ink-2); font-size: 13.5px; max-width: 62ch; }
+  .verify-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .verify-links a { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink); text-decoration: none; border: 1px solid var(--border); border-radius: 7px; padding: 7px 11px; display: inline-flex; align-items: center; gap: 6px; transition: border-color 0.12s ease, color 0.12s ease; }
+  .verify-links a:hover { border-color: var(--accent); color: var(--accent-ink); }
+
+  .fine { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border); font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .fine a { color: var(--ink-3); }
+  .err-banner { display: none; background: var(--bad-soft); color: var(--bad); border: 1px solid color-mix(in oklab, var(--bad) 35%, var(--border)); border-radius: 10px; padding: 10px 14px; font-size: 12.5px; margin-bottom: 24px; font-family: "IBM Plex Mono", monospace; }
+
+  @media (max-width: 760px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .oracles { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="wordmark">8004Swap <span class="tag">ledger</span></div>
+    <div class="topbar-meta">
+      <span class="pill live" id="livePill"><span class="dot"></span>Live</span>
+      <span class="pill good" id="tradingPill">Trading —</span>
+      <span class="pill">Base Sepolia · testnet</span>
+      <span class="pill" id="blockPill">block —</span>
+      <button class="refresh" id="refreshBtn" type="button">Refresh now</button>
+    </div>
+  </div>
+
+  <div class="err-banner" id="errBanner"></div>
+
+  <p class="thesis">
+    8004Swap is a non&#8209;custodial RFQ exchange restricted to autonomous agents.
+    This page polls the deployed contracts <em>directly from your browser</em> —
+    no backend, no cache, nothing self&#8209;reported.
+  </p>
+
+  <div class="stats" id="statGrid"></div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Chainlink oracles feeding the pricer</div>
+      <div class="section-note">Same feed used by every RFQ price-sanity check</div>
+    </div>
+    <div class="oracles" id="oracleGrid"></div>
+  </div>
+
+  <div class="section grid-2">
+    <div>
+      <div class="section-head">
+        <div class="section-title">Trade ledger — every fill, ever</div>
+        <div class="section-note">Settlement <code style="font-family:'IBM Plex Mono',monospace;">QuoteFilled</code> events, deploy block → tip</div>
+      </div>
+      <div class="card">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>When</th><th>Maker gave</th><th>Taker gave</th><th>Tx</th></tr></thead>
+            <tbody id="tradeBody"></tbody>
+          </table>
+        </div>
+        <div class="table-empty-note" id="tradeNote"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-head"><div class="section-title">Who controls it</div></div>
+      <div class="card panel">
+        <div class="signers" id="signerList"></div>
+        <div class="threshold-line" id="thresholdLine"></div>
+        <div class="kv" id="contractKv" style="border-top:1px solid var(--border); padding-top:14px; margin-top:2px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section verify">
+    <h3>Verify this yourself</h3>
+    <p>No part of this page requires trusting us. Open devtools and watch the network tab — every number above comes from a plain <code>eth_call</code>/<code>eth_getLogs</code> to a public RPC, or pull the same data yourself.</p>
+    <div class="verify-links" id="verifyLinks"></div>
+  </div>
+
+  <div class="fine">
+    <span id="statusLine">connecting…</span>
+    <span><a href="https://github.com/Stakemate369/8004swap" target="_blank" rel="noopener">github.com/Stakemate369/8004swap</a></span>
+  </div>
+</div>
+
+<script>
+const RPC_URL = "https://sepolia.base.org";
+const EXPLORER = "https://sepolia.basescan.org";
+const REGISTRY = "0x7Bb793b6Ada038cf9c26c6BB54cA15Db6BD35ed1";
+const SETTLEMENT = "0x5Cc2558dF13739c05cb57Caf0E9cfe1629a6a945";
+const SAFE = "0xa520Dbae06a187068e0F02333e3B02CDF7d4B7e3";
+const ORACLE_ETH_USD = "0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1";
+const ORACLE_USDC_USD = "0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165";
+
+const SEL = {
+  feeBps: "0x24a9d853",
+  feeRecipient: "0x46904840",
+  owner: "0x8da5cb5b",
+  tradingEnabled: "0x4ada218b",
+  latestRoundData: "0xfeaf968c",
+  decimals: "0x313ce567",
+  getOwners: "0xa0e67e2b",
+  getThreshold: "0xe75235b8",
+};
+const TOPIC_QUOTE_FILLED = "0x96a19f92eaeedc3e1f8acc2f12a32ea1311c9478ddb39eef72779c89ec0953db";
+const TOPIC_AGENT_REGISTERED = "0xd73ee4827561fd4bd6453ab3bab25535b087fed01b153b3e5e7890b21c5057f7";
+
+const TOKENS = {
+  "0x4200000000000000000000000000000000000006": { symbol: "WETH", decimals: 18 },
+  "0x036cbd53842c5426634e7929541ec2318f3dcf7e": { symbol: "USDC", decimals: 6 },
+};
+
+// Baked-in history as of the last manual sync — the live poller only ever appends
+// newer blocks on top of this, so a cold page load never needs to scan the full
+// ~300k-block history through a rate-limited public RPC.
+let trades = [
+  { txHash: "0x9e55a0dbd30fedb7d3a562b7617a361df3cca26d160787a8a6ebda93b4ca29bc", blockNumber: 45960066, timestamp: 1787688420, makerToken: "0x4200000000000000000000000000000000000006", takerToken: "0x036cbd53842c5426634e7929541ec2318f3dcf7e", makerAmount: "406381300000000", takerAmount: "1000000" },
+  { txHash: "0x55566e589a401cc21de4de09bf0c1b4889e204e34e8edf487bb41a636a649513", blockNumber: 45960609, timestamp: 1787689506, makerToken: "0x4200000000000000000000000000000000000006", takerToken: "0x036cbd53842c5426634e7929541ec2318f3dcf7e", makerAmount: "406381300000000", takerAmount: "1000000" },
+  { txHash: "0x73b5a7cf5bc59e53218c660fe80966acff6fa901b74c5c07eac39abfaf3dd58a", blockNumber: 46104611, timestamp: 1787977510, makerToken: "0x4200000000000000000000000000000000000006", takerToken: "0x036cbd53842c5426634e7929541ec2318f3dcf7e", makerAmount: "41034058268362", takerAmount: "100000" },
+];
+let agentCount = 2;
+let lastScannedBlock = 46223773n;
+const POLL_STATE_MS = 20000;
+const POLL_EVENTS_MS = 60000;
+
+let rpcId = 1;
+async function rpc(method, params) {
+  const res = await fetch(RPC_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: rpcId++, method, params }),
+  });
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message || "RPC error");
+  return json.result;
+}
+const ethCall = (to, data) => rpc("eth_call", [{ to, data }, "latest"]);
+
+function hexToBigInt(hex) { return BigInt(hex); }
+function decodeAddress(hex) { return "0x" + hex.slice(-40); }
+function decodeBool(hex) { return hexToBigInt(hex) !== 0n; }
+function decodeInt256(hex) {
+  let v = hexToBigInt(hex);
+  const MAX = 2n ** 255n;
+  if (v >= MAX) v -= 2n ** 256n;
+  return v;
+}
+function decodeAddressArray(hex) {
+  // dynamic array: [offset][length][elem0][elem1]...
+  const words = hex.slice(2).match(/.{1,64}/g) || [];
+  const len = Number(BigInt("0x" + words[1]));
+  const out = [];
+  for (let i = 0; i < len; i++) out.push(decodeAddress("0x" + words[2 + i]));
+  return out;
+}
+function formatUnits(raw, decimals) {
+  const v = Number(raw) / Math.pow(10, decimals);
+  return v.toLocaleString(undefined, { maximumFractionDigits: decimals >= 18 ? 6 : 4 });
+}
+function short(addr) { return addr.slice(0, 6) + "…" + addr.slice(-4); }
+function tokenFor(addr) { return TOKENS[addr.toLowerCase()] || { symbol: short(addr), decimals: 18 }; }
+function fmtDate(unixSeconds) {
+  const d = new Date(unixSeconds * 1000);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " · " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+function agoFrom(unixMs) {
+  const s = Math.round((Date.now() - unixMs) / 1000);
+  if (s < 5) return "just now";
+  if (s < 60) return s + "s ago";
+  const m = Math.round(s / 60);
+  if (m < 60) return m + "m ago";
+  return Math.round(m / 60) + "h ago";
+}
+function el(tag, attrs, ...children) {
+  const e = document.createElement(tag);
+  for (const k in attrs || {}) {
+    if (k === "text") e.textContent = attrs[k];
+    else e.setAttribute(k, attrs[k]);
+  }
+  children.flat().forEach((c) => { if (c !== null && c !== undefined) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+  return e;
+}
+
+let lastGoodPollAt = null;
+
+function renderStats(state) {
+  const grid = document.getElementById("statGrid");
+  grid.innerHTML = "";
+  const feePct = (Number(state.feeBps) / 100).toString() + "%";
+  const rows = [
+    { label: "Protocol fee", value: feePct, sub: `${state.feeBps} bps`, href: `${EXPLORER}/address/${SETTLEMENT}#readContract` },
+    { label: "Fills settled", value: String(trades.length), sub: "all-time, all test-net", href: `${EXPLORER}/address/${SETTLEMENT}#events` },
+    { label: "Agents registered", value: String(agentCount), sub: "ERC-8004-gated identities", href: `${EXPLORER}/address/${REGISTRY}#events` },
+    { label: "Owner", value: "2-of-3 Safe", sub: short(SAFE), href: `${EXPLORER}/address/${SAFE}` },
+  ];
+  rows.forEach((s) => {
+    grid.appendChild(el("a", { class: "stat", href: s.href, target: "_blank", rel: "noopener" },
+      el("span", { class: "stat-label", text: s.label }),
+      el("span", { class: "stat-value", text: s.value }),
+      el("span", { class: "stat-sub", text: s.sub }),
+      el("span", { class: "stat-link", text: "View on Basescan →" })
+    ));
+  });
+
+  document.getElementById("tradingPill").textContent = state.tradingEnabled ? "Trading enabled" : "Trading paused";
+  document.getElementById("tradingPill").className = "pill " + (state.tradingEnabled ? "good" : "bad");
+
+  const contractKv = document.getElementById("contractKv");
+  contractKv.innerHTML = "";
+  [["Registry", REGISTRY], ["Settlement", SETTLEMENT], ["Fee recipient", state.feeRecipient]].forEach(([k, v]) => {
+    contractKv.appendChild(el("div", { class: "kv-row" },
+      el("span", { class: "kv-k", text: k }),
+      el("a", { class: "kv-v mono-link", href: `${EXPLORER}/address/${v}`, target: "_blank", rel: "noopener", text: short(v) })
+    ));
+  });
+}
+
+function renderSigners(owners, threshold) {
+  const list = document.getElementById("signerList");
+  list.innerHTML = "";
+  const labels = ["Automation key", "Passkey signer", "Passkey signer"];
+  owners.forEach((addr, i) => {
+    list.appendChild(el("div", { class: "signer" },
+      el("div", { class: "signer-badge", text: String(i + 1) }),
+      el("div", { style: "display:flex; flex-direction:column; gap:1px;" },
+        el("span", { class: "signer-addr", text: short(addr) }),
+        el("span", { style: "font-size:10.5px; color:var(--ink-3); font-family:'IBM Plex Sans',sans-serif;", text: labels[i] || "Signer" })
+      )
+    ));
+  });
+  document.getElementById("thresholdLine").innerHTML = `<b>${threshold} of ${owners.length}</b>&nbsp;signatures required — no single key, including our own automation, can act alone.`;
+}
+
+function renderOracles(eth, usdc) {
+  const grid = document.getElementById("oracleGrid");
+  grid.innerHTML = "";
+  [["ETH / USD", eth], ["USDC / USD", usdc]].forEach(([pair, o]) => {
+    grid.appendChild(el("div", { class: "oracle" },
+      el("span", { class: "oracle-pair", text: pair }),
+      el("span", { class: "oracle-price", text: "$" + Number(o.price).toLocaleString(undefined, { maximumFractionDigits: 4 }) }),
+      el("span", { class: "oracle-age", text: "updated " + agoFrom(o.updatedAt * 1000) })
+    ));
+  });
+}
+
+function renderTrades(freshTxHash) {
+  const body = document.getElementById("tradeBody");
+  body.innerHTML = "";
+  trades.slice().reverse().forEach((t) => {
+    const mk = tokenFor(t.makerToken), tk = tokenFor(t.takerToken);
+    const row = el("tr", { class: t.txHash === freshTxHash ? "fresh" : "" },
+      el("td", { text: fmtDate(t.timestamp) }),
+      el("td", {}, el("span", { class: "amt" }, formatUnits(t.makerAmount, mk.decimals), el("span", { class: "tok", text: mk.symbol }))),
+      el("td", {}, el("span", { class: "amt" }, formatUnits(t.takerAmount, tk.decimals), el("span", { class: "tok", text: tk.symbol }))),
+      el("td", {}, el("a", { class: "mono-link", href: `${EXPLORER}/tx/${t.txHash}`, target: "_blank", rel: "noopener", text: short(t.txHash) }))
+    );
+    body.appendChild(row);
+  });
+  document.getElementById("tradeNote").textContent = "This is the complete list — 8004Swap is pre-launch on testnet, so every fill is our own validation traffic, shown in full rather than rounded up.";
+}
+
+function renderVerifyLinks() {
+  const wrap = document.getElementById("verifyLinks");
+  wrap.innerHTML = "";
+  [
+    ["Registry contract", `${EXPLORER}/address/${REGISTRY}#code`],
+    ["Settlement contract", `${EXPLORER}/address/${SETTLEMENT}#code`],
+    ["Safe (2-of-3 owner)", `${EXPLORER}/address/${SAFE}`],
+    ["Protocol spec (PROTOCOL.md)", "https://github.com/Stakemate369/8004swap/blob/main/PROTOCOL.md"],
+    ["Source code", "https://github.com/Stakemate369/8004swap"],
+  ].forEach(([label, href]) => wrap.appendChild(el("a", { href, target: "_blank", rel: "noopener" }, label, " ↗")));
+}
+renderVerifyLinks();
+
+function setError(msg) {
+  const banner = document.getElementById("errBanner");
+  if (msg) { banner.textContent = msg; banner.style.display = "block"; }
+  else { banner.style.display = "none"; }
+}
+function markPollOutcome(ok) {
+  const livePill = document.getElementById("livePill");
+  if (ok) { lastGoodPollAt = Date.now(); livePill.className = "pill good live"; livePill.querySelector("span:last-child") || (livePill.lastChild.textContent = "Live"); }
+  else { livePill.className = "pill bad"; livePill.innerHTML = "<span class=\"dot\"></span>Reconnecting…"; }
+}
+
+async function pollState() {
+  try {
+    const [blockHex, feeBpsHex, feeRecipientHex, ownerHex, tradingHex, ethRound, ethDec, usdcRound, usdcDec, safeOwnersHex, safeThresholdHex] = await Promise.all([
+      rpc("eth_blockNumber", []),
+      ethCall(SETTLEMENT, SEL.feeBps),
+      ethCall(SETTLEMENT, SEL.feeRecipient),
+      ethCall(SETTLEMENT, SEL.owner),
+      ethCall(SETTLEMENT, SEL.tradingEnabled),
+      ethCall(ORACLE_ETH_USD, SEL.latestRoundData),
+      ethCall(ORACLE_ETH_USD, SEL.decimals),
+      ethCall(ORACLE_USDC_USD, SEL.latestRoundData),
+      ethCall(ORACLE_USDC_USD, SEL.decimals),
+      ethCall(SAFE, SEL.getOwners),
+      ethCall(SAFE, SEL.getThreshold),
+    ]);
+
+    const state = {
+      feeBps: hexToBigInt(feeBpsHex).toString(),
+      feeRecipient: decodeAddress(feeRecipientHex),
+      owner: decodeAddress(ownerHex),
+      tradingEnabled: decodeBool(tradingHex),
+    };
+
+    const parseRound = (hex, decHex) => {
+      const words = hex.slice(2).match(/.{1,64}/g);
+      const answer = decodeInt256("0x" + words[1]);
+      const updatedAt = Number(hexToBigInt("0x" + words[3]));
+      const dec = Number(hexToBigInt(decHex));
+      return { price: (Number(answer) / Math.pow(10, dec)).toString(), updatedAt };
+    };
+
+    document.getElementById("blockPill").textContent = "block " + Number(hexToBigInt(blockHex)).toLocaleString();
+    renderStats(state);
+    renderSigners(decodeAddressArray(safeOwnersHex), hexToBigInt(safeThresholdHex).toString());
+    renderOracles(parseRound(ethRound, ethDec), parseRound(usdcRound, usdcDec));
+
+    markPollOutcome(true);
+    setError(null);
+    document.getElementById("statusLine").textContent = "Polling Base Sepolia every 20s, straight from your browser — last read " + agoFrom(lastGoodPollAt) + ".";
+  } catch (err) {
+    markPollOutcome(false);
+    setError("Live RPC read failed just now (" + (err.message || "network error") + ") — showing the last good state. Retrying…");
+  }
+}
+
+async function pollEvents() {
+  try {
+    const latestHex = await rpc("eth_blockNumber", []);
+    const latest = hexToBigInt(latestHex);
+    if (latest <= lastScannedBlock) return;
+    const fromBlock = "0x" + (lastScannedBlock + 1n).toString(16);
+    const toBlock = latestHex;
+
+    const [fillLogs, agentLogs] = await Promise.all([
+      rpc("eth_getLogs", [{ address: SETTLEMENT, topics: [TOPIC_QUOTE_FILLED], fromBlock, toBlock }]),
+      rpc("eth_getLogs", [{ address: REGISTRY, topics: [TOPIC_AGENT_REGISTERED], fromBlock, toBlock }]),
+    ]);
+
+    let freshTxHash = null;
+    for (const log of fillLogs) {
+      const words = log.data.slice(2).match(/.{1,64}/g);
+      const makerToken = decodeAddress("0x" + words[0]);
+      const takerToken = decodeAddress("0x" + words[1]);
+      const makerAmount = hexToBigInt("0x" + words[2]).toString();
+      const takerAmount = hexToBigInt("0x" + words[3]).toString();
+      const block = await rpc("eth_getBlockByNumber", [log.blockNumber, false]);
+      trades.push({
+        txHash: log.transactionHash,
+        blockNumber: Number(hexToBigInt(log.blockNumber)),
+        timestamp: Number(hexToBigInt(block.timestamp)),
+        makerToken, takerToken, makerAmount, takerAmount,
+      });
+      freshTxHash = log.transactionHash;
+    }
+    agentCount += agentLogs.length;
+    lastScannedBlock = latest;
+    if (fillLogs.length) renderTrades(freshTxHash);
+  } catch (err) {
+    // event scan failing doesn't take down the rest of the page — state poll already shows a banner
+  }
+}
+
+document.getElementById("refreshBtn").addEventListener("click", () => { pollState(); pollEvents(); });
+
+renderTrades(null);
+pollState();
+pollEvents();
+setInterval(pollState, POLL_STATE_MS);
+setInterval(pollEvents, POLL_EVENTS_MS);
+setInterval(() => {
+  if (lastGoodPollAt) document.getElementById("statusLine").textContent = "Polling Base Sepolia every 20s, straight from your browser — last read " + agoFrom(lastGoodPollAt) + ".";
+}, 5000);
+</script>
+</body>
+</html>
