@@ -76,13 +76,13 @@ async function handleAuthResponse(conn: ConnState, msg: Extract<InboundMsg, { ty
   }).catch(() => false);
 
   if (!validSig) {
-    send(conn, { type: "error", message: "assinatura de login inválida" });
+    send(conn, { type: "error", message: "invalid login signature" });
     return;
   }
 
   const active = await isAgentActive(msg.address).catch(() => false);
   if (!active) {
-    send(conn, { type: "error", message: "endereço não registrado ou pausado no Registry" });
+    send(conn, { type: "error", message: "address not registered or paused in the Registry" });
     return;
   }
 
@@ -91,15 +91,15 @@ async function handleAuthResponse(conn: ConnState, msg: Extract<InboundMsg, { ty
 }
 
 function handleSubscribePair(conn: ConnState, msg: SubscribePairMsg) {
-  if (!conn.address) return send(conn, { type: "error", message: "autentique-se antes de se inscrever" });
+  if (!conn.address) return send(conn, { type: "error", message: "authenticate before subscribing" });
   manager.subscribe(conn.id, msg.makerToken, msg.takerToken);
 }
 
 async function handleRfqRequest(conn: ConnState, msg: RfqRequestMsg) {
-  if (!conn.address) return send(conn, { type: "error", message: "autentique-se antes de pedir cotação" });
+  if (!conn.address) return send(conn, { type: "error", message: "authenticate before requesting a quote" });
 
   if (!rfqRateLimiter.tryConsume(conn.address.toLowerCase())) {
-    return send(conn, { type: "error", requestId: msg.requestId, message: "limite de pedidos por minuto excedido" });
+    return send(conn, { type: "error", requestId: msg.requestId, message: "requests per minute limit exceeded" });
   }
 
   const requestId = msg.requestId || randomUUID();
@@ -134,9 +134,9 @@ async function handleRfqRequest(conn: ConnState, msg: RfqRequestMsg) {
 }
 
 async function handleQuoteResponse(conn: ConnState, msg: QuoteResponseMsg) {
-  if (!conn.address) return send(conn, { type: "error", message: "autentique-se antes de cotar" });
+  if (!conn.address) return send(conn, { type: "error", message: "authenticate before quoting" });
   if (msg.quote.maker.toLowerCase() !== conn.address.toLowerCase()) {
-    return send(conn, { type: "error", requestId: msg.requestId, message: "maker da cotação difere do endereço autenticado" });
+    return send(conn, { type: "error", requestId: msg.requestId, message: "quote maker differs from the authenticated address" });
   }
 
   const quote = toRankedQuote(msg.quote, msg.signature);
@@ -146,12 +146,12 @@ async function handleQuoteResponse(conn: ConnState, msg: QuoteResponseMsg) {
     isAgentActive(quote.taker),
   ]);
   if (!makerActive || !takerActive) {
-    return send(conn, { type: "error", requestId: msg.requestId, message: "maker ou taker inativo no Registry" });
+    return send(conn, { type: "error", requestId: msg.requestId, message: "maker or taker inactive in the Registry" });
   }
 
   const validSig = await verifyQuoteSignature(quote, msg.signature, quote.maker).catch(() => false);
   if (!validSig) {
-    return send(conn, { type: "error", requestId: msg.requestId, message: "assinatura da cotação inválida" });
+    return send(conn, { type: "error", requestId: msg.requestId, message: "invalid quote signature" });
   }
 
   const result = manager.submitQuote(msg.requestId, quote);
@@ -215,7 +215,7 @@ export function startServer(): WebSocketServer {
       try {
         msg = JSON.parse(raw.toString());
       } catch {
-        return send(conn, { type: "error", message: "JSON inválido" });
+        return send(conn, { type: "error", message: "invalid JSON" });
       }
 
       switch (msg.type) {
@@ -232,7 +232,7 @@ export function startServer(): WebSocketServer {
           void handleQuoteResponse(conn, msg);
           break;
         default:
-          send(conn, { type: "error", message: "tipo de mensagem desconhecido" });
+          send(conn, { type: "error", message: "unknown message type" });
       }
     });
 

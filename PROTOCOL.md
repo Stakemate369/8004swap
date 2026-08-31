@@ -1,63 +1,64 @@
-# Protocolo do Relay (WebSocket)
+# Relay Protocol (WebSocket)
 
-Formato de mensagens trocadas com o Relay (`relay/src/server.ts`). Toda mensagem é um
-JSON com campo `type`. `bigint` sempre trafega como `string` decimal (JSON não suporta
-bigint nativamente) e é convertido de volta no cliente.
+Format of messages exchanged with the Relay (`relay/src/server.ts`). Every message is
+JSON with a `type` field. `bigint` always travels as a decimal `string` (JSON has no
+native bigint support) and is converted back on the client.
 
-Fonte de verdade: `relay/src/types.ts`. Este documento é a versão legível; em caso de
-divergência, o código manda.
+Source of truth: `relay/src/types.ts`. This document is the readable version; in case
+of divergence, the code wins.
 
-## 1. Handshake de autenticação
+## 1. Authentication handshake
 
-O servidor inicia toda conexão mandando um desafio. O cliente prova controle da chave
-assinando uma mensagem simples (não é uma tx, não gasta gas).
-
-```
-Servidor → Cliente   { "type": "auth_challenge", "nonce": "<hex aleatório>" }
-Cliente  → Servidor  { "type": "auth_response", "address": "0x...", "signature": "0x..." }
-```
-
-A assinatura é sobre a string `Login to 8004Swap Relay: <nonce>` (personal_sign / EIP-191).
+The server starts every connection by sending a challenge. The client proves key
+control by signing a plain message (not a tx, no gas spent).
 
 ```
-Servidor → Cliente   { "type": "auth_ok", "address": "0x..." }
-                  ou  { "type": "error", "message": "..." }
+Server → Client   { "type": "auth_challenge", "nonce": "<random hex>" }
+Client → Server   { "type": "auth_response", "address": "0x...", "signature": "0x..." }
 ```
 
-O servidor rejeita (`error`) se a assinatura for inválida **ou** se `registry.isActive(address)`
-retornar `false` on-chain (agente não registrado, pausado, ou pausa global ativa).
-Nenhuma outra mensagem é aceita antes de `auth_ok`.
-
-## 2. Maker: inscrever-se num par
+The signature is over the string `Login to 8004Swap Relay: <nonce>` (personal_sign /
+EIP-191).
 
 ```
-Cliente → Servidor   { "type": "subscribe_pair", "makerToken": "0x...", "takerToken": "0x..." }
+Server → Client   { "type": "auth_ok", "address": "0x..." }
+               or  { "type": "error", "message": "..." }
 ```
 
-Sem confirmação explícita — a partir daqui, essa conexão recebe todo `rfq_broadcast`
-para esse par exato (`makerToken`/`takerToken` nessa ordem).
+The server rejects (`error`) if the signature is invalid **or** if
+`registry.isActive(address)` returns `false` on-chain (agent not registered, paused,
+or global pause active). No other message is accepted before `auth_ok`.
 
-## 3. Taker: pedir cotação
+## 2. Maker: subscribe to a pair
 
 ```
-Cliente → Servidor   {
+Client → Server   { "type": "subscribe_pair", "makerToken": "0x...", "takerToken": "0x..." }
+```
+
+No explicit confirmation — from this point on, this connection receives every
+`rfq_broadcast` for that exact pair (`makerToken`/`takerToken` in that order).
+
+## 3. Taker: request a quote
+
+```
+Client → Server   {
   "type": "rfq_request",
-  "requestId": "<opcional, gerado pelo servidor se ausente>",
+  "requestId": "<optional, server-generated if absent>",
   "makerToken": "0x...",
   "takerToken": "0x...",
   "takerAmount": "1000000",
-  "minMakerAmount": "0",          // opcional, piso de aceitação
-  "expiresInMs": 3000              // opcional, teto real é 30000ms
+  "minMakerAmount": "0",          // optional, acceptance floor
+  "expiresInMs": 3000              // optional, real ceiling is 30000ms
 }
 ```
 
-O servidor faz broadcast pros subscribers do par:
+The server broadcasts to the pair's subscribers:
 
 ```
-Servidor → Makers    {
+Server → Makers   {
   "type": "rfq_broadcast",
   "requestId": "...",
-  "taker": "0x<endereço do taker que pediu>",
+  "taker": "0x<address of the taker who requested>",
   "makerToken": "0x...",
   "takerToken": "0x...",
   "takerAmount": "1000000",
@@ -65,15 +66,15 @@ Servidor → Makers    {
 }
 ```
 
-## 4. Maker: responder com cotação assinada
+## 4. Maker: respond with a signed quote
 
 ```
-Cliente → Servidor   {
+Client → Server   {
   "type": "quote_response",
   "requestId": "...",
   "quote": {
     "maker": "0x...",
-    "taker": "0x<sempre o taker do rfq_broadcast, nunca zeroAddress>",
+    "taker": "0x<always the taker from the rfq_broadcast, never zeroAddress>",
     "makerToken": "0x...",
     "takerToken": "0x...",
     "makerAmount": "...",
@@ -81,64 +82,66 @@ Cliente → Servidor   {
     "expiry": "<epoch seconds>",
     "nonce": "..."
   },
-  "signature": "0x..."   // EIP-712 sobre `quote`, domain AgentRFQSettlement v1
+  "signature": "0x..."   // EIP-712 over `quote`, domain AgentRFQSettlement v1
 }
 ```
 
-**`quote.taker` deve sempre ser o endereço exato do `rfq_broadcast` correspondente.**
-O contrato aceita `taker == address(0)` (qualquer um preenche), mas isso abre a
-cotação a front-running por cópia de calldata no mempool — os clientes de referência
-(`relay/examples/`) sempre fixam o taker.
+**`quote.taker` must always be the exact address from the corresponding
+`rfq_broadcast`.** The contract accepts `taker == address(0)` (anyone can fill), but
+that opens the quote to front-running via calldata copying in the mempool — the
+reference clients (`relay/examples/`) always pin the taker.
 
-O servidor valida: assinatura EIP-712 correta, maker/taker ainda ativos no Registry, e
-que os termos batem exatamente com o `rfq_request` original (mesmo taker/par/`takerAmount`).
+The server validates: correct EIP-712 signature, maker/taker still active on the
+Registry, and that the terms match the original `rfq_request` exactly (same
+taker/pair/`takerAmount`).
 
-## 5. Servidor: melhor cotação
+## 5. Server: best quote
 
-Quando a janela da RFQ expira (`min(expiresInMs, 30000)`), o servidor rankeia as
-cotações recebidas (maior `makerAmount` primeiro, descarta abaixo de `minMakerAmount`)
-e devolve só ao taker original:
+When the RFQ window expires (`min(expiresInMs, 30000)`), the server ranks the
+received quotes (highest `makerAmount` first, discards anything below
+`minMakerAmount`) and returns them to the original taker only:
 
 ```
-Servidor → Taker     {
+Server → Taker    {
   "type": "best_quotes",
   "requestId": "...",
-  "quotes": [ { ...termos da quote, "signature": "0x..." }, ... ]
+  "quotes": [ { ...quote terms, "signature": "0x..." }, ... ]
 }
 ```
 
-## 6. Liquidação (fora do Relay)
+## 6. Settlement (outside the Relay)
 
-O taker pega a melhor `quote` + `signature` da lista e chama
-`Settlement.fillQuote(quote, signature)` on-chain diretamente. O Relay **não participa**
-da liquidação — só faz matching. Ver `contracts/Settlement.sol` e
-`relay/examples/settleTaker.ts` para o fluxo completo.
+The taker takes the best `quote` + `signature` from the list and calls
+`Settlement.fillQuote(quote, signature)` on-chain directly. The Relay **does not
+participate** in settlement — it only matches. See `contracts/Settlement.sol` and
+`relay/examples/settleTaker.ts` for the full flow.
 
-**Variante com permit:** se o taker ainda não tem allowance sobre `takerToken`, pode
-chamar `Settlement.fillQuoteWithPermit(quote, signature, permit)` em vez de `fillQuote`
-— poupa a tx de `approve` separada, desde que `takerToken` suporte EIP-2612. `permit` é
-`{ value, deadline, v, r, s }`, uma assinatura padrão EIP-2612 do taker autorizando o
-Settlement a gastar `value` até `deadline`. `permit.deadline == 0` é o sinal explícito
-de "sem permit" (usa allowance convencional já existente) — o SDK expõe isso como
-`NO_PERMIT`. Um permit inválido ou já consumido não derruba o fill: é ignorado
-silenciosamente, e a checagem normal de allowance segue adiante. Ver
-`sdk/src/settlement.ts` (`fillQuoteWithPermit`, `NO_PERMIT`).
+**Permit variant:** if the taker doesn't yet have an allowance on `takerToken`, it can
+call `Settlement.fillQuoteWithPermit(quote, signature, permit)` instead of
+`fillQuote` — saves the separate `approve` tx, as long as `takerToken` supports
+EIP-2612. `permit` is `{ value, deadline, v, r, s }`, a standard EIP-2612 signature
+from the taker authorizing Settlement to spend `value` until `deadline`.
+`permit.deadline == 0` is the explicit signal for "no permit" (uses the existing
+conventional allowance) — the SDK exposes this as `NO_PERMIT`. An invalid or
+already-consumed permit doesn't fail the fill: it's silently ignored, and the normal
+allowance check proceeds. See `sdk/src/settlement.ts` (`fillQuoteWithPermit`,
+`NO_PERMIT`).
 
-## Erros
+## Errors
 
 ```
-{ "type": "error", "requestId"?: "...", "message": "<texto em português>" }
+{ "type": "error", "requestId"?: "...", "message": "<text>" }
 ```
 
-`requestId` presente quando o erro é sobre um pedido/cotação específica; ausente para
-erros de sessão (ex: mensagem antes de autenticar).
+`requestId` present when the error is about a specific request/quote; absent for
+session-level errors (e.g. a message sent before authenticating).
 
-## Limites
+## Limits
 
-- Rate limit por endereço autenticado: `RFQ_RATE_LIMIT_PER_MINUTE` (padrão 30/min) em
-  `rfq_request`.
-- Janela de RFQ: no máximo 30 segundos, mesmo se o cliente pedir mais.
-- Cache de `isActive()`: até `REGISTRY_CACHE_TTL_MS` (padrão 30s) — uma pausa no Registry
-  pode levar até esse tempo pra refletir no Relay.
-- Conexões WebSocket simultâneas por IP: `MAX_CONNECTIONS_PER_IP` (padrão 20), mesmo
-  antes do handshake de autenticação — acima disso a conexão é fechada (código 1008).
+- Rate limit per authenticated address: `RFQ_RATE_LIMIT_PER_MINUTE` (default 30/min)
+  on `rfq_request`.
+- RFQ window: at most 30 seconds, even if the client asks for more.
+- `isActive()` cache: up to `REGISTRY_CACHE_TTL_MS` (default 30s) — a Registry pause
+  can take up to that long to be reflected in the Relay.
+- Concurrent WebSocket connections per IP: `MAX_CONNECTIONS_PER_IP` (default 20),
+  even before the auth handshake — beyond that the connection is closed (code 1008).

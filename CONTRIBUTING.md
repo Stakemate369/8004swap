@@ -1,75 +1,75 @@
-# Contribuindo com o 8004Swap
+# Contributing to 8004Swap
 
-Projeto em fase inicial (testnet), sem orçamento para auditoria formal, infra paga
-dedicada, ou equipe própria. As áreas abaixo estão abertas a quem quiser contribuir —
-via crédito/reconhecimento público, não pagamento em dinheiro, salvo quando uma
-issue diz o contrário.
+Early-stage project (testnet), no budget for a formal audit, dedicated paid infra, or
+a core team. The areas below are open to anyone who wants to contribute — via public
+credit/recognition, not cash payment, unless an issue says otherwise.
 
-## Onde ajudar tem mais impacto agora
+## Where help matters most right now
 
-1. **Rodar seu próprio Relay (federação).** O Relay é self-hostable
-   (`relay/Dockerfile`, `relay/deploy.akash.yaml`) e conecta no mesmo Registry/Settlement
-   já em Base Sepolia. Hoje existe um único Relay operado centralmente — isso é o maior
-   ponto único de falha do protocolo. Rodar uma instância independente e reportar
-   problemas de compatibilidade já ajuda a rede a virar de fato descentralizada.
+1. **Run your own Relay (federation).** The Relay is self-hostable
+   (`relay/Dockerfile`, `relay/deploy.akash.yaml`) and connects to the same
+   Registry/Settlement already on Base Sepolia. Today there's a single, centrally
+   operated Relay — that's the protocol's biggest single point of failure. Running an
+   independent instance and reporting compatibility issues already helps the network
+   become genuinely decentralized.
 
-2. **Revisão de segurança voluntária.** Sem orçamento para Code4rena/Sherlock por
-   enquanto. Uma leitura adversarial de `contracts/Registry.sol` e
-   `contracts/Settlement.sol` (41 testes Foundry já cobrem o comportamento esperado —
-   veja `test/`) é bem-vinda via issue ou PR. Achados sérios entram no
-   [`SECURITY.md`](./SECURITY.md) com crédito público.
+2. **Volunteer security review.** No budget for Code4rena/Sherlock for now. An
+   adversarial read of `contracts/Registry.sol` and `contracts/Settlement.sol` (41
+   Foundry tests already cover expected behavior — see `test/`) is very welcome via
+   issue or PR. Serious findings go into [`SECURITY.md`](./SECURITY.md) with public
+   credit.
 
-3. **SDK em outras linguagens.** Já existe um SDK em TypeScript (`sdk/`,
-   `@8004swap/agent-sdk`) seguindo `PROTOCOL.md`. Um equivalente em Python/Rust/Go
-   abre a rede a mais agentes.
+3. **SDK in other languages.** There's already a TypeScript SDK (`sdk/`,
+   `@8004swap/agent-sdk`) following `PROTOCOL.md`. A Python/Rust/Go equivalent opens
+   the network to more agents.
 
-4. **Portar para outra chain.** A arquitetura (oráculo Chainlink obrigatório por par,
-   tetos de risco configuráveis) não é específica da Base — replicar em outra L2
-   com feeds Chainlink ativos é um bom primeiro PR de contrato.
+4. **Port to another chain.** The architecture (mandatory per-pair Chainlink oracle,
+   configurable risk caps) isn't Base-specific — replicating it on another L2 with
+   active Chainlink feeds is a good first contract PR.
 
-5. **Registro em diretórios do ecossistema ERC-8004/MCP.** Ajuda a redigir/propor
-   listagem em índices públicos de agentes é bem-vinda.
+5. **Listing in ERC-8004/MCP ecosystem directories.** Help drafting/proposing a
+   listing in public agent indexes is welcome.
 
-## O que você ganha contribuindo
+## What you get for contributing
 
-Sem orçamento, então o retorno não é dinheiro — é um destes três, dependendo do
-tamanho da contribuição:
+No budget, so the payoff isn't money — it's one of these three, depending on the size
+of the contribution:
 
-1. **Crédito público.** Nome no histórico do GitHub, citado no README/CONTRIBUTING,
-   e em qualquer `SECURITY.md`/changelog futuro que reconheça achados sérios. Vale
-   como prova pública de portfólio num tema (agentes autônomos + cripto) que está
-   crescendo agora.
+1. **Public credit.** Name in the GitHub history, cited in README/CONTRIBUTING, and
+   in any future `SECURITY.md`/changelog acknowledging serious findings. Counts as
+   public portfolio proof in a space (autonomous agents + crypto) that's growing
+   right now.
 
-2. **Reputação on-chain, verificável pra sempre.** Como o diferencial do próprio
-   8004Swap é reputação via ERC-8004, contribuidores sérios podem ser registrados
-   como colaboradores fundadores de um jeito que fica gravado on-chain — não é um
-   "obrigado" que se perde, é uma prova pública e permanente, e é literalmente a
-   mesma tecnologia que o projeto usa pra tudo mais.
+2. **On-chain reputation, verifiable forever.** Since 8004Swap's own differentiator
+   is reputation via ERC-8004, serious contributors can be registered as founding
+   collaborators in a way that's recorded on-chain — not a "thanks" that fades, but
+   permanent public proof, using literally the same technology the project uses for
+   everything else.
 
-3. **Assento de confiança.** Contribuição consistente e séria pode virar acesso de
-   merge no repositório ou posição de cossignatário no multisig dos contratos
-   (quando existir) — poder de decisão real, não só reconhecimento.
+3. **A seat of trust.** Consistent, serious contribution can turn into merge access
+   on the repository or a co-signer position on the contracts' multisig (once it
+   exists) — real decision-making power, not just recognition.
 
-**O que não oferecemos ainda:** parte de taxas do protocolo ou qualquer token —
-`feeBps` existe no contrato mas está zerado hoje, e não há token. Prometer uma fatia
-de algo que não existe é o tipo de promessa sem lastro que a gente evita aqui; se um
-dia houver receita ou token de verdade, isso se formaliza então, não antes.
+**What we don't offer yet:** a share of protocol fees or any token — `feeBps` exists
+in the contract but is set to zero today, and there is no token. Promising a slice of
+something that doesn't exist is exactly the kind of unbacked promise we avoid here; if
+real revenue or a real token ever exists, that gets formalized then, not before.
 
-## Como propor
+## How to propose
 
-- Abra uma issue descrevendo o problema/proposta antes de um PR grande — evita
-  retrabalho se a direção não bater com o resto da arquitetura.
-- Mudanças em `contracts/` precisam vir com teste Foundry cobrindo o caso (positivo
-  e, quando aplicável, o caso de ataque que a mudança previne).
-- Mudanças em `relay/` precisam rodar `npm test` e, quando tocam no fluxo de
-  liquidação, um teste ponta a ponta contra uma chain local (Anvil) — não só
-  unit test isolado.
+- Open an issue describing the problem/proposal before a large PR — avoids wasted
+  work if the direction doesn't match the rest of the architecture.
+- Changes to `contracts/` must come with a Foundry test covering the case (positive
+  case and, where applicable, the attack case the change prevents).
+- Changes to `relay/` must pass `npm test` and, when they touch the settlement flow,
+  an end-to-end test against a local chain (Anvil) — not just an isolated unit test.
 
-## O que não aceita PR externo sem alinhamento prévio
+## What won't be merged externally without prior alignment
 
-- Decisão de deploy em mainnet.
-- Troca do endereço `owner()` dos contratos (hoje sob Turnkey, não multisig ainda).
-- Qualquer coisa envolvendo a marca/nome "8004Swap".
+- Mainnet deployment decisions.
+- Changing the contracts' `owner()` address (currently under Turnkey, not a multisig
+  yet).
+- Anything involving the "8004Swap" brand/name.
 
-Essas ficam com quem mantém o projeto — abra uma issue de discussão em vez de PR
-direto.
+These stay with the project maintainer — open a discussion issue instead of a direct
+PR.

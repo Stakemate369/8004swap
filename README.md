@@ -1,57 +1,57 @@
 # 8004Swap
 
-Exchange RFQ não-custodial **só para agentes autônomos** (não humanos). Cada trade é um
-match direto entre dois agentes (maker/taker), liquidado atomicamente on-chain — sem
-pool de liquidez pré-financiado, no padrão do 0x Protocol / CoW Swap.
+Non-custodial RFQ exchange **built only for autonomous agents** (not humans). Every trade
+is a direct match between two agents (maker/taker), settled atomically on-chain — no
+pre-funded liquidity pool, following the 0x Protocol / CoW Swap pattern.
 
-Diferencial: acesso sem KYC + reputação on-chain via [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004),
-não apenas mais uma exchange com camada de bot em cima de infra que exige KYC humano.
+Differentiator: no-KYC access + on-chain reputation via [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004),
+not just another exchange with a bot layer bolted onto infra that still requires human KYC.
 
-**Status: testnet (Base Sepolia). Nenhum fundo real em risco. Nenhuma auditoria formal ainda.**
+**Status: testnet (Base Sepolia). No real funds at risk. No formal audit yet.**
 
-## Arquitetura
+## Architecture
 
 ```
-Agente maker  ──┐                                    ┌── Agente taker
-                │   WebSocket (RFQ, assinatura        │
-                ▼    EIP-712 off-chain, sem gas)       ▼
+Maker agent   ──┐                                    ┌── Taker agent
+                │   WebSocket (RFQ, off-chain          │
+                ▼    EIP-712 signature, gasless)        ▼
            ┌─────────────────────────────────────────────┐
            │                 Relay (relay/)               │
-           │  matching de RFQ, ranking por melhor preço   │
+           │  RFQ matching, best-price ranking            │
            └─────────────────────┬─────────────────────────┘
-                                  │ cotação assinada
+                                  │ signed quote
                                   ▼
                      ┌───────────────────────────┐
-                     │   Settlement.sol           │  ← liquidação atômica,
-                     │   (contracts/Settlement.sol)│    oráculo Chainlink,
-                     └─────────────┬───────────────┘    tetos de risco
+                     │   Settlement.sol           │  ← atomic settlement,
+                     │   (contracts/Settlement.sol)│    Chainlink oracle,
+                     └─────────────┬───────────────┘    risk caps
                                    │ isActive() / recordFill()
                                    ▼
                      ┌───────────────────────────┐
-                     │   Registry.sol             │  ← quem pode operar
+                     │   Registry.sol             │  ← who's allowed to trade
                      │   (contracts/Registry.sol) │
                      └───────────────────────────┘
 ```
 
-- **Registry.sol** — cadastro de agentes autorizados (auto-registro, `msg.sender` prova
-  controle da chave). Owner pode pausar globalmente.
-- **Settlement.sol** — liquidação de `Quote` assinada via EIP-712. Exige oráculo Chainlink
-  cadastrado por par (nega por padrão), checa staleness, aplica tetos de risco
-  (`maxTradeAmount`, `maxVolumePerWindow`) e taxa opcional anti-sybil (`feeBps`).
-- **relay/** — servidor WebSocket que autentica agentes (assinatura de login), faz
-  matching de RFQ por par de token e devolve a melhor cotação assinada ao taker, que
-  fecha on-chain chamando `fillQuote` diretamente.
-- **sdk/** (`@8004swap/agent-sdk`) — cliente TypeScript que encapsula o handshake WS,
-  assinatura EIP-712 e liquidação on-chain, pra quem quiser integrar um agente sem
-  reimplementar o protocolo do zero. Ver [`sdk/README.md`](./sdk/README.md).
-- **sdk-python/** (`8004swap-agent-sdk`) — mesma coisa, em Python (`eth_account` +
-  `websockets` + `web3.py`). Ver [`sdk-python/README.md`](./sdk-python/README.md).
+- **Registry.sol** — registry of authorized agents (self-registration, `msg.sender`
+  proves key control). Owner can pause globally.
+- **Settlement.sol** — settles an EIP-712-signed `Quote`. Requires a Chainlink oracle
+  registered per pair (deny-by-default), checks staleness, applies risk caps
+  (`maxTradeAmount`, `maxVolumePerWindow`) and an optional anti-sybil fee (`feeBps`).
+- **relay/** — WebSocket server that authenticates agents (login signature), matches
+  RFQs by token pair, and returns the best signed quote to the taker, who settles
+  on-chain by calling `fillQuote` directly.
+- **sdk/** (`@8004swap/agent-sdk`) — TypeScript client that wraps the WS handshake,
+  EIP-712 signing and on-chain settlement, for anyone integrating an agent without
+  reimplementing the protocol from scratch. See [`sdk/README.md`](./sdk/README.md).
+- **sdk-python/** (`8004swap-agent-sdk`) — same thing, in Python (`eth_account` +
+  `websockets` + `web3.py`). See [`sdk-python/README.md`](./sdk-python/README.md).
 
-Ver [`PROTOCOL.md`](./PROTOCOL.md) para o formato exato das mensagens do Relay.
+See [`PROTOCOL.md`](./PROTOCOL.md) for the exact Relay message format.
 
-## Rodar localmente
+## Running locally
 
-### Contratos (Foundry)
+### Contracts (Foundry)
 
 ```shell
 forge build
@@ -63,34 +63,34 @@ forge test
 ```shell
 cd relay
 npm install
-cp .env.example .env   # preencha BASE_RPC_URL, REGISTRY_ADDRESS
+cp .env.example .env   # fill in BASE_RPC_URL, REGISTRY_ADDRESS
 npm run dev
 ```
 
-Exemplos de agente (maker/taker) em `relay/examples/` — rodam contra o Relay local ou
-hospedado. Pra integrar um agente novo, prefira `sdk/` (`@8004swap/agent-sdk`), que
-encapsula o mesmo fluxo desses exemplos como biblioteca.
+Agent examples (maker/taker) live in `relay/examples/` — they run against the local
+or hosted Relay. To integrate a new agent, prefer `sdk/` (`@8004swap/agent-sdk`), which
+wraps the same flow as those examples as a library.
 
-### Deploy de contratos
+### Contract deployment
 
 ```shell
 forge script script/DeploySepolia.s.sol --rpc-url <sepolia_rpc> --private-key <key> --broadcast
 ```
 
-`script/Deploy.s.sol` é a versão mainnet (4 pares contra USDC) — **não rodar sem decisão
-explícita**, contratos ainda não passaram por auditoria formal.
+`script/Deploy.s.sol` is the mainnet version (4 pairs against USDC) — **do not run
+without an explicit decision**, contracts have not gone through a formal audit yet.
 
-## Rede atual (Base Sepolia)
+## Current network (Base Sepolia)
 
 - Registry: `0x7Bb793b6Ada038cf9c26c6BB54cA15Db6BD35ed1`
 - Settlement: `0x5Cc2558dF13739c05cb57Caf0E9cfe1629a6a945`
-- Par ativo: WETH/USDC-teste
+- Active pair: WETH/test-USDC
 
-## Contribuindo
+## Contributing
 
-Projeto aberto a colaboradores externos — contratos, relay, SDKs em outras linguagens,
-suporte a novas chains. Ver [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+Open to external contributors — contracts, relay, SDKs in other languages, support
+for new chains. See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
-## Licença
+## License
 
 MIT
