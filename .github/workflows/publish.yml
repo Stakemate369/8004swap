@@ -1,0 +1,42 @@
+name: Publish to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Which package to publish"
+        required: true
+        type: choice
+        options:
+          - sdk
+          - mcp-server
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Ensure npm supports OIDC trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Install
+        working-directory: ${{ github.event.inputs.package }}
+        run: npm ci
+
+      - name: Build
+        working-directory: ${{ github.event.inputs.package }}
+        run: npm run build
+
+      - name: Publish
+        working-directory: ${{ github.event.inputs.package }}
+        run: npm publish --access public
