@@ -21,6 +21,7 @@ import {
 } from "@8004swap/agent-sdk";
 import { config, requireAgentPrivateKey } from "./config.js";
 import { REGISTRY_ABI } from "./registry.js";
+import { payX402Resource } from "./x402.js";
 
 const chain = {
   id: config.chainId,
@@ -176,6 +177,36 @@ server.tool(
     return {
       content: [{ type: "text", text: JSON.stringify({ txHash: hash, status: receipt.status }) }],
     };
+  }
+);
+
+server.tool(
+  "pay_x402",
+  "Fetches an HTTP resource; if it replies with the x402 payment-required protocol (protocol v2, " +
+    "github.com/coinbase/x402), signs an EIP-3009 authorization from the configured agent to satisfy it and " +
+    "retries, returning the final response. Only the 'exact' scheme with 'eip3009' transfer method is supported " +
+    "(rejects Permit2/ERC-7710 offers). Requires AGENT_PRIVATE_KEY. maxAmountAtomic bounds what this call may " +
+    "authorize; there is no other limit, so callers should always pass the smallest value that covers the " +
+    "expected price.",
+  {
+    url: z.string().describe("URL of the x402-gated resource"),
+    method: z.string().optional().describe("HTTP method, default GET"),
+    body: z.string().optional().describe("Raw request body, if any"),
+    headers: z.record(z.string(), z.string()).optional().describe("Extra request headers"),
+    maxAmountAtomic: z
+      .string()
+      .describe("Upper bound, in atomic units of the asset (e.g. USDC has 6 decimals), on what this call may authorize"),
+  },
+  async ({ url, method, body, headers, maxAmountAtomic }) => {
+    const account = privateKeyToAccount(requireAgentPrivateKey());
+    const result = await payX402Resource(account, {
+      url,
+      method,
+      body,
+      headers,
+      maxAmountAtomic: BigInt(maxAmountAtomic),
+    });
+    return { content: [{ type: "text", text: JSON.stringify(result) }] };
   }
 );
 

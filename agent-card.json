@@ -18,7 +18,7 @@
       "endpoint": "https://github.com/Stakemate369/8004swap/tree/main/mcp-server"
     }
   ],
-  "x402Support": false,
+  "x402Support": true,
   "active": true,
   "registrations": [
     {

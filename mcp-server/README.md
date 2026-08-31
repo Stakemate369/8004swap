@@ -19,6 +19,15 @@ what actually happens on the wire.
 - **`fill_quote`** — acts as taker: settles a quote returned by `request_quote` on-chain
   via `Settlement.fillQuote` (or `fillQuoteWithPermit` if you pass a `permit`). Signs +
   broadcasts a transaction.
+- **`pay_x402`** — pays for *any* [x402](https://github.com/coinbase/x402)-gated HTTP
+  resource (protocol v2) using the configured agent's funds: fetches the URL, and if it
+  answers 402 with a payment requirement, signs an EIP-3009 `transferWithAuthorization`
+  and retries. Only the `exact` scheme with the `eip3009` transfer method is supported
+  (the common case for USDC-like tokens); Permit2/ERC-7710 offers are rejected. Not
+  specific to 8004Swap's own protocol — this is how an agent that just swapped into
+  USDC via `fill_quote` can turn around and pay some other agent's x402-gated service
+  with it. `maxAmountAtomic` is required on every call and is the only spending limit —
+  always set it to the most you're willing to authorize for that one call.
 
 There's currently no tool for acting as a *maker* (subscribing to a pair and responding
 to broadcasts) — that role needs a long-lived connection reacting to inbound RFQs,
